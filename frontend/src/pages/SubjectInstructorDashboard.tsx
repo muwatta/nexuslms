@@ -1,17 +1,49 @@
 // frontend/src/pages/SubjectInstructorDashboard.tsx
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+  type ReactNode,
+  type ElementType,
+} from "react";
 import api from "../api";
 import { getUserData } from "../utils/authUtils";
 import { AnimatePresence, motion } from "framer-motion";
 import TeacherLayout from "../components/TeacherLayout";
+import {
+  BookOpen,
+  Users,
+  FileText,
+  ChevronDown,
+  Save,
+  Upload,
+  Plus,
+  Search,
+  Calendar,
+  TrendingUp,
+  X,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Eye,
+  GraduationCap,
+  School,
+  Clock,
+  BarChart3,
+  MoreHorizontal,
+} from "lucide-react";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types ────
+
 interface Course {
   id: number;
   title: string;
   department?: string;
   student_class?: string;
 }
+
 interface StudentRow {
   profile_id: number;
   student_id: string;
@@ -24,28 +56,78 @@ interface StudentRow {
   total: number;
   grade: string;
   result_id: number | null;
-  status: string;
+  status: "draft" | "submitted" | "reviewed" | "published";
 }
+
 interface Assignment {
   id: number;
   title: string;
   description: string;
-  due_date: string;
+  deadline: string;
   course: number;
   course_title?: string;
 }
 
-// ── Class label map ───────────────────────────────────────────────────────────
+interface Student {
+  id: number;
+  username: string;
+  full_name?: string;
+  class: string | null;
+  class_section?: string;
+  department: string | null;
+  student_id?: string;
+  assignment_id: number;
+}
+
+interface MySubject {
+  subject: string;
+  subject_display: string;
+  students: Student[];
+}
+
+interface StudentProgress {
+  student_name: string;
+  student_id: string;
+  student_class: string;
+  results: Array<{
+    subject: string;
+    total: number;
+    grade: string;
+    ca_total: number;
+    exam: number;
+    status: "draft" | "submitted" | "reviewed" | "published";
+  }>;
+}
+
+type SectionType = "entry" | "assignments" | "students";
+
+interface TabConfig {
+  id: SectionType;
+  label: string;
+  icon: ElementType;
+  count?: number;
+}
+
+interface Enrollment {
+  student: number | { id: number };
+}
+
+interface Profile {
+  id: number;
+  student_id?: string;
+  user?: {
+    first_name?: string;
+    last_name?: string;
+    username?: string;
+  };
+}
+
+// ── Constants 
+
 const CL: Record<string, string> = {
-  jss1a: "JSS 1A",
-  jss1b: "JSS 1B",
-  jss1c: "JSS 1C",
-  jss2a: "JSS 2A",
-  jss2b: "JSS 2B",
-  jss2c: "JSS 2C",
-  jss3a: "JSS 3A",
-  jss3b: "JSS 3B",
-  jss3c: "JSS 3C",
+  jss1: "JSS 1",
+  jss2: "JSS 2",
+  jss3: "JSS 3",
   sss1_sci: "SSS 1 Science",
   sss1_arts: "SSS 1 Arts",
   sss1_com: "SSS 1 Commercial",
@@ -71,10 +153,6 @@ const CL: Record<string, string> = {
   ai_ml_junior: "AI & ML — Junior",
   ai_ml_intermediate: "AI & ML — Intermediate",
   ai_ml_advanced: "AI & ML — Advanced",
-  data_science_beginner: "Data Science — Beginner",
-  data_science_junior: "Data Science — Junior",
-  data_science_intermediate: "Data Science — Intermediate",
-  data_science_advanced: "Data Science — Advanced",
   scratch_beginner: "Scratch — Beginner",
   scratch_junior: "Scratch — Junior",
   scratch_intermediate: "Scratch — Intermediate",
@@ -91,235 +169,609 @@ const CL: Record<string, string> = {
   ai_automation_junior: "AI Automation — Junior",
   ai_automation_intermediate: "AI Automation — Intermediate",
   ai_automation_advanced: "AI Automation — Advanced",
+  data_science_beginner: "Data Science — Beginner",
+  data_science_junior: "Data Science — Junior",
+  data_science_intermediate: "Data Science — Intermediate",
+  data_science_advanced: "Data Science — Advanced",
 };
 
-const TERMS = ["FIRST TERM", "SECOND TERM", "THIRD TERM"];
-const TERM_KEY: Record<string, string> = {
+const TERMS = ["FIRST TERM", "SECOND TERM", "THIRD TERM"] as const;
+type TermType = (typeof TERMS)[number];
+
+const TERM_KEY: Record<TermType, string> = {
   "FIRST TERM": "First Term",
   "SECOND TERM": "Second Term",
   "THIRD TERM": "Third Term",
 };
-const grade = (t: number) =>
-  t >= 70
-    ? "A"
-    : t >= 60
-      ? "B"
-      : t >= 50
-        ? "C"
-        : t >= 45
-          ? "D"
-          : t >= 40
-            ? "E"
-            : "F";
-const GRADE_BG: Record<string, string> = {
-  A: "#dcfce7",
-  B: "#dbeafe",
-  C: "#fef9c3",
-  D: "#ffedd5",
-  E: "#fee2e2",
-  F: "#fecaca",
-};
-const GRADE_FG: Record<string, string> = {
-  A: "#15803d",
-  B: "#1d4ed8",
-  C: "#a16207",
-  D: "#c2410c",
-  E: "#b91c1c",
-  F: "#991b1b",
+
+const SCHEME_MAX = {
+  test1: 10,
+  test2: 10,
+  assignment: 10,
+  midterm: 10,
+  exam: 60,
+} as const;
+
+type ScoreField = keyof typeof SCHEME_MAX;
+
+const gradeOf = (total: number): string => {
+  if (total >= 70) return "A";
+  if (total >= 60) return "B";
+  if (total >= 50) return "C";
+  if (total >= 45) return "D";
+  if (total >= 40) return "E";
+  return "F";
 };
 
-const yr = () => {
+const GRADE_STYLES: Record<
+  string,
+  { bg: string; text: string; border: string }
+> = {
+  A: {
+    bg: "bg-emerald-100 dark:bg-emerald-900/30",
+    text: "text-emerald-700 dark:text-emerald-300",
+    border: "border-emerald-200 dark:border-emerald-800",
+  },
+  B: {
+    bg: "bg-blue-100 dark:bg-blue-900/30",
+    text: "text-blue-700 dark:text-blue-300",
+    border: "border-blue-200 dark:border-blue-800",
+  },
+  C: {
+    bg: "bg-amber-100 dark:bg-amber-900/30",
+    text: "text-amber-700 dark:text-amber-300",
+    border: "border-amber-200 dark:border-amber-800",
+  },
+  D: {
+    bg: "bg-orange-100 dark:bg-orange-900/30",
+    text: "text-orange-700 dark:text-orange-300",
+    border: "border-orange-200 dark:border-orange-800",
+  },
+  E: {
+    bg: "bg-rose-100 dark:bg-rose-900/30",
+    text: "text-rose-700 dark:text-rose-300",
+    border: "border-rose-200 dark:border-rose-800",
+  },
+  F: {
+    bg: "bg-red-100 dark:bg-red-900/30",
+    text: "text-red-700 dark:text-red-300",
+    border: "border-red-200 dark:border-red-800",
+  },
+};
+
+const STATUS_STYLES: Record<
+  string,
+  { bg: string; text: string; icon: ElementType }
+> = {
+  published: {
+    bg: "bg-emerald-100 dark:bg-emerald-900/30",
+    text: "text-emerald-700 dark:text-emerald-300",
+    icon: CheckCircle2,
+  },
+  reviewed: {
+    bg: "bg-blue-100 dark:bg-blue-900/30",
+    text: "text-blue-700 dark:text-blue-300",
+    icon: Eye,
+  },
+  submitted: {
+    bg: "bg-amber-100 dark:bg-amber-900/30",
+    text: "text-amber-700 dark:text-amber-300",
+    icon: Upload,
+  },
+  draft: {
+    bg: "bg-gray-100 dark:bg-gray-800",
+    text: "text-gray-600 dark:text-gray-400",
+    icon: FileText,
+  },
+};
+
+const getCurrentYear = (): string => {
   const n = new Date();
   return n.getMonth() >= 8
     ? `${n.getFullYear()}/${n.getFullYear() + 1}`
     : `${n.getFullYear() - 1}/${n.getFullYear()}`;
 };
+
 const YEARS = Array.from({ length: 12 }, (_, i) => {
   const y = new Date().getFullYear() + 3 - i;
   return `${y}/${y + 1}`;
 });
 
-// ── Component ─────────────────────────────────────────────────────────────────
+const formatDate = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const getInitial = (name: string): string => (name || "?")[0].toUpperCase();
+
+// ── Reusable UI Components ─────────────────────────────────────────────────────
+
+interface CardProps {
+  children: ReactNode;
+  className?: string;
+}
+
+const Card = ({ children, className = "" }: CardProps) => (
+  <div
+    className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm ${className}`}
+  >
+    {children}
+  </div>
+);
+
+interface BadgeProps {
+  children: ReactNode;
+  variant?: "default" | "success" | "warning" | "error" | "info" | "neutral";
+  className?: string;
+}
+
+const Badge = ({
+  children,
+  variant = "default",
+  className = "",
+}: BadgeProps) => {
+  const variants = {
+    default: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
+    success:
+      "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300",
+    warning:
+      "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+    error: "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300",
+    info: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+    neutral: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${variants[variant]} ${className}`}
+    >
+      {children}
+    </span>
+  );
+};
+
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: ReactNode;
+  variant?:
+    | "primary"
+    | "secondary"
+    | "outline"
+    | "ghost"
+    | "danger"
+    | "success";
+  size?: "sm" | "md" | "lg";
+  isLoading?: boolean;
+}
+
+const Button = ({
+  children,
+  variant = "primary",
+  size = "md",
+  isLoading,
+  className = "",
+  ...props
+}: ButtonProps) => {
+  const variants = {
+    primary:
+      "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20",
+    secondary:
+      "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100",
+    outline:
+      "border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300",
+    ghost:
+      "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300",
+    danger:
+      "bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/20",
+    success:
+      "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20",
+  };
+
+  const sizes = {
+    sm: "px-3 py-1.5 text-xs",
+    md: "px-4 py-2.5 text-sm",
+    lg: "px-6 py-3 text-base",
+  };
+
+  return (
+    <button
+      className={`inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] ${variants[variant]} ${sizes[size]} ${className}`}
+      disabled={isLoading || props.disabled}
+      {...props}
+    >
+      {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+      {children}
+    </button>
+  );
+};
+
+interface SectionHeaderProps {
+  title: string;
+  subtitle?: string;
+  action?: ReactNode;
+}
+
+const SectionHeader = ({ title, subtitle, action }: SectionHeaderProps) => (
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div>
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+        {title}
+      </h2>
+      {subtitle && (
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          {subtitle}
+        </p>
+      )}
+    </div>
+    {action && <div className="flex items-center gap-2">{action}</div>}
+  </div>
+);
+
+interface EmptyStateProps {
+  icon: ElementType;
+  title: string;
+  description: string;
+  action?: ReactNode;
+}
+
+const EmptyState = ({
+  icon: Icon,
+  title,
+  description,
+  action,
+}: EmptyStateProps) => (
+  <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+    <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+      <Icon className="w-8 h-8 text-gray-400" />
+    </div>
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+      {title}
+    </h3>
+    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-4">
+      {description}
+    </p>
+    {action}
+  </div>
+);
+
+interface ToastProps {
+  message: string;
+  type: "success" | "error";
+  onClose: () => void;
+}
+
+const Toast = ({ message, type, onClose }: ToastProps) => (
+  <motion.div
+    initial={{ opacity: 0, y: -20, scale: 0.95 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    exit={{ opacity: 0, y: -20, scale: 0.95 }}
+    className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl ${
+      type === "success" ? "bg-emerald-600" : "bg-rose-600"
+    } text-white min-w-[300px]`}
+  >
+    {type === "success" ? (
+      <CheckCircle2 className="w-5 h-5" />
+    ) : (
+      <AlertCircle className="w-5 h-5" />
+    )}
+    <p className="text-sm font-medium flex-1">{message}</p>
+    <button
+      onClick={onClose}
+      className="opacity-70 hover:opacity-100 transition-opacity"
+    >
+      <X className="w-4 h-4" />
+    </button>
+  </motion.div>
+);
+
+interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  label: string;
+  helperText?: string;
+}
+
+const Select = ({
+  label,
+  helperText,
+  className = "",
+  ...props
+}: SelectProps) => (
+  <div className="space-y-1.5">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+      {label}
+    </label>
+    <select
+      className={`w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all disabled:opacity-50 ${className}`}
+      {...props}
+    />
+    {helperText && <p className="text-[10px] text-gray-400">{helperText}</p>}
+  </div>
+);
+
+// ── Main Component ───────────────────────────────────────────────────────────
+
 const SubjectInstructorDashboard: React.FC = () => {
   const userData = getUserData();
   const dept = userData?.department ?? "western";
 
-  // ── Section controlled by TeacherLayout sidebar ───────────────────────────
-  const [activeSection, setActiveSection] = useState<"entry" | "assignments">(
-    "entry",
-  );
-
-  // ── Courses state ─────────────────────────────────────────────────────────
+  // ── State ─
+  const [activeSection, setActiveSection] = useState<SectionType>("entry");
+  const [mySubjects, setMySubjects] = useState<MySubject[]>([]);
+  const [subjectsReady, setSubjectsReady] = useState(false);
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [coursesReady, setCoursesReady] = useState(false);
 
-  // ── Result entry filters ──────────────────────────────────────────────────
-  const [selClass, setSelClass] = useState("");
-  const [selCourse, setSelCourse] = useState<number | "">("");
-  const [selTerm, setSelTerm] = useState("FIRST TERM");
-  const [selYear, setSelYear] = useState(yr());
-
-  // ── Score sheet ───────────────────────────────────────────────────────────
-  const [rows, setRows] = useState<StudentRow[]>([]);
-  const [sheetBusy, setSheetBusy] = useState(false);
+  // Result Entry State
+  const [selectedClass, setSelectedClass] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState<number | "">("");
+  const [selectedTerm, setSelectedTerm] = useState<TermType>("FIRST TERM");
+  const [selectedYear, setSelectedYear] = useState(getCurrentYear());
+  const [studentRows, setStudentRows] = useState<StudentRow[]>([]);
+  const [isLoadingSheet, setIsLoadingSheet] = useState(false);
   const [sheetLoaded, setSheetLoaded] = useState(false);
   const [autoSave, setAutoSave] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<Date | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Assignments ───────────────────────────────────────────────────────────
+  // Assignment State
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignClass, setAssignClass] = useState("");
   const [assignCourse, setAssignCourse] = useState<number | "">("");
-  const [newAssign, setNewAssign] = useState({
+  const [newAssignment, setNewAssignment] = useState({
     title: "",
     description: "",
-    due_date: "",
+    deadline: "",
   });
-  const [showForm, setShowForm] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [showAssignmentForm, setShowAssignmentForm] = useState(false);
+  const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
 
-  const [toast, setToast] = useState<{ ok: boolean; msg: string } | null>(null);
-  const notify = (ok: boolean, msg: string) => {
-    setToast({ ok, msg });
-    setTimeout(() => setToast(null), 5000);
-  };
+  // Students State
+  const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
+  const [progressStudent, setProgressStudent] =
+    useState<StudentProgress | null>(null);
+  const [isLoadingProgress, setIsLoadingProgress] = useState(false);
+  const [studentSearch, setStudentSearch] = useState("");
 
-  // ── Load courses ──────────────────────────────────────────────────────────
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  // ── Callbacks ──────────────────────────────────────────────────────────────
+  const showToast = useCallback(
+    (type: "success" | "error", message: string) => {
+      setToast({ type, message });
+      setTimeout(() => setToast(null), 5000);
+    },
+    [],
+  );
+
+  // ── Data Fetching ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    api
+      .get("/subject-assignments/my_students/")
+      .then((res) => {
+        setMySubjects(res.data ?? []);
+        setSubjectsReady(true);
+      })
+      .catch(() => setSubjectsReady(true));
+  }, []);
+
   useEffect(() => {
     api
       .get("/courses/", { params: { department: dept, page_size: 500 } })
-      .then((r) => {
-        const d = r.data;
-        const list: Course[] = Array.isArray(d) ? d : (d?.results ?? []);
-        setAllCourses(list);
-        setCoursesReady(true);
-        if (list.length === 0)
-          notify(
-            false,
-            `No courses found for ${dept}. Check backend course.py is updated.`,
-          );
-      })
-      .catch((e) => {
-        notify(
-          false,
-          "Failed to load courses — " +
-            (e?.response?.status ?? "network error"),
+      .then((res) => {
+        setAllCourses(
+          Array.isArray(res.data) ? res.data : (res.data?.results ?? []),
         );
         setCoursesReady(true);
-      });
+      })
+      .catch(() => setCoursesReady(true));
   }, [dept]);
 
-  // ── Load assignments ──────────────────────────────────────────────────────
   const loadAssignments = useCallback(() => {
     api
       .get("/assignments/", { params: { page_size: 200 } })
-      .then((r) => {
-        const d = r.data;
-        setAssignments(Array.isArray(d) ? d : (d?.results ?? []));
+      .then((res) => {
+        setAssignments(
+          Array.isArray(res.data) ? res.data : (res.data?.results ?? []),
+        );
       })
       .catch(() => {});
   }, []);
+
   useEffect(() => {
     loadAssignments();
   }, [loadAssignments]);
 
-  // ── Derived ───────────────────────────────────────────────────────────────
-  // Classes = unique student_class values from all courses
-  const classOptions = Array.from(
-    new Set(allCourses.map((c) => c.student_class).filter(Boolean)),
-  ) as string[];
+  // ── Derived State ─────────────────────────────────────────────────────────
+  const hasSubjectAssignments = mySubjects.length > 0;
 
-  // Subjects for selected class
-  const subjectOptions = selClass
-    ? allCourses.filter((c) => c.student_class === selClass)
-    : [];
+  const myClasses = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          mySubjects.flatMap((s) =>
+            s.students.map((st) => st.class).filter(Boolean),
+          ),
+        ),
+      ) as string[],
+    [mySubjects],
+  );
 
-  // Subjects for assignment class
-  const assignSubjects = assignClass
-    ? allCourses.filter((c) => c.student_class === assignClass)
+  const getCoursesForClass = useCallback(
+    (className: string): Course[] => {
+      if (!hasSubjectAssignments) {
+        return allCourses.filter((c) => c.student_class === className);
+      }
+
+      const subjectsForClass = mySubjects
+        .filter((s) => s.students.some((st) => st.class === className))
+        .map((s) => s.subject);
+
+      return allCourses.filter((c) => {
+        if (c.student_class !== className) return false;
+        const titleSubject = c.title
+          .split("—")[0]
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "_");
+        const titleSubjectSpaced = c.title.split("—")[0].trim().toLowerCase();
+
+        return subjectsForClass.some((subj) => {
+          const subjNorm = subj.toLowerCase().replace(/_/g, " ");
+          const subjExact = subj.toLowerCase();
+          return (
+            titleSubjectSpaced === subjNorm ||
+            titleSubject === subjExact ||
+            titleSubject === subjNorm.replace(/\s+/g, "_")
+          );
+        });
+      });
+    },
+    [hasSubjectAssignments, mySubjects, allCourses],
+  );
+
+  const classOptions = hasSubjectAssignments
+    ? myClasses
+    : (Array.from(
+        new Set(allCourses.map((c) => c.student_class).filter(Boolean)),
+      ) as string[]);
+
+  const subjectOptions = selectedClass ? getCoursesForClass(selectedClass) : [];
+  const assignmentSubjects = assignClass
+    ? getCoursesForClass(assignClass)
     : allCourses;
 
-  // ── Load score sheet ──────────────────────────────────────────────────────
-  const loadSheet = useCallback(async () => {
-    if (!selCourse || !selClass) {
-      notify(false, "Select class and subject first");
+  const allMyStudents = useMemo(
+    () =>
+      mySubjects.flatMap((s) =>
+        s.students.map((st) => ({
+          ...st,
+          subject_display: s.subject_display,
+          subject: s.subject,
+        })),
+      ),
+    [mySubjects],
+  );
+
+  const uniqueStudentIds = useMemo(
+    () => Array.from(new Set(allMyStudents.map((s) => s.id))),
+    [allMyStudents],
+  );
+
+  const filteredSubjects = useMemo(
+    () =>
+      mySubjects.filter((s) => {
+        if (!studentSearch) return true;
+        const query = studentSearch.toLowerCase();
+        return (
+          s.subject_display.toLowerCase().includes(query) ||
+          s.students.some((st) =>
+            (st.full_name ?? st.username).toLowerCase().includes(query),
+          )
+        );
+      }),
+    [mySubjects, studentSearch],
+  );
+
+  const courseName =
+    allCourses.find((c) => c.id === selectedCourse)?.title ?? "";
+  const classLabel = selectedClass ? (CL[selectedClass] ?? selectedClass) : "";
+
+  // ── Score Sheet Logic ──────────────────────────────────────────────────────
+  const loadScoreSheet = useCallback(async () => {
+    if (!selectedCourse || !selectedClass) {
+      showToast("error", "Select class and subject first");
       return;
     }
-    setSheetBusy(true);
+
+    setIsLoadingSheet(true);
     setSheetLoaded(false);
-    setRows([]);
+    setStudentRows([]);
+
     try {
       const [enrollRes, resultRes, profileRes] = await Promise.all([
         api.get("/enrollments/", {
-          params: { course: selCourse, page_size: 200 },
+          params: { course: selectedCourse, page_size: 200 },
         }),
         api.get("/results/", {
           params: {
-            course: selCourse,
-            term: TERM_KEY[selTerm],
-            academic_year: selYear,
+            course: selectedCourse,
+            term: TERM_KEY[selectedTerm],
+            academic_year: selectedYear,
             page_size: 200,
           },
         }),
         api.get("/profiles/", {
-          params: { student_class: selClass, role: "student", page_size: 200 },
+          params: {
+            student_class: selectedClass,
+            role: "student",
+            page_size: 200,
+          },
         }),
       ]);
-      const enrollments: any[] = Array.isArray(enrollRes.data)
-        ? enrollRes.data
-        : (enrollRes.data?.results ?? []);
-      const existing: any[] = Array.isArray(resultRes.data)
+
+      // Properly typed API responses
+      const enrollments: Array<{ student: number | { id: number } }> =
+        Array.isArray(enrollRes.data)
+          ? enrollRes.data
+          : (enrollRes.data?.results ?? []);
+      const existing: Array<any> = Array.isArray(resultRes.data)
         ? resultRes.data
         : (resultRes.data?.results ?? []);
-      const profiles: any[] = Array.isArray(profileRes.data)
+      const profiles: Array<{
+        id: number;
+        student_id?: string;
+        user?: {
+          first_name?: string;
+          last_name?: string;
+          username?: string;
+        };
+      }> = Array.isArray(profileRes.data)
         ? profileRes.data
         : (profileRes.data?.results ?? []);
 
-      console.log(
-        `[Sheet] enr=${enrollments.length} profiles=${profiles.length} existing=${existing.length}`,
-      );
+      // Build profile map with proper typing
+      const profileMap: Record<number, (typeof profiles)[number]> =
+        Object.fromEntries(profiles.map((p) => [p.id, p]));
 
-      // Build profile map by id
-      const pmap: Record<number, any> = {};
-      profiles.forEach((p) => {
-        pmap[p.id] = p;
-      });
+      // Extract enrolled IDs with type guard
+      const enrolledIds: number[] = enrollments
+        .map((e) => (typeof e.student === "number" ? e.student : e.student?.id))
+        .filter((id): id is number => typeof id === "number");
 
-      // Get student IDs from enrollments (student field is integer ID)
-      const enrolledIds = enrollments
-        .map((e: any) => {
-          if (typeof e.student === "number") return e.student;
-          if (typeof e.student === "object" && e.student?.id)
-            return e.student.id;
-          return null;
-        })
-        .filter(Boolean) as number[];
-
-      // Merge: enrolled students that are in the class profiles
-      // If no enrollments found, fall back to all profiles in the class
-      const studentIds =
+      // Get final student IDs with type safety
+      const studentIds: number[] =
         enrolledIds.length > 0
-          ? Array.from(new Set(enrolledIds)).filter((id) => pmap[id])
+          ? Array.from(new Set(enrolledIds)).filter(
+              (id): id is number => typeof id === "number" && !!profileMap[id],
+            )
           : profiles.map((p) => p.id);
 
-      if (studentIds.length === 0 && profiles.length === 0) {
-        notify(
-          false,
-          `No students found in ${CL[selClass] ?? selClass}. Check enrollments.`,
+      if (studentIds.length === 0) {
+        showToast(
+          "error",
+          `No students found in ${CL[selectedClass] ?? selectedClass}`,
         );
-        setSheetBusy(false);
+        setIsLoadingSheet(false);
         return;
       }
-      // If profiles exist but no enrollments for this course, show all class students
-      const finalIds =
-        studentIds.length > 0 ? studentIds : profiles.map((p) => p.id);
 
-      const built: StudentRow[] = finalIds.map((pid) => {
-        const p = pmap[pid] ?? {};
+      // Map to StudentRow with explicit pid type
+    const rows: StudentRow[] = studentIds.map((pid: number) => {
+        const p = profileMap[pid] ?? {};
         const u = p.user ?? {};
         const ex = existing.find((r: any) => r.student === pid);
+        const total =
+          (ex?.test1 ?? 0) +
+          (ex?.test2 ?? 0) +
+          (ex?.assignment ?? 0) +
+          (ex?.midterm ?? 0) +
+          (ex?.exam ?? 0);
+
         return {
           profile_id: pid,
           student_id: p.student_id ?? `#${pid}`,
@@ -332,777 +784,1122 @@ const SubjectInstructorDashboard: React.FC = () => {
           assignment: ex?.assignment ?? 0,
           midterm: ex?.midterm ?? 0,
           exam: ex?.exam ?? 0,
-          total: ex?.total ?? 0,
-          grade: ex?.grade ?? "",
+          total: Math.round(total * 10) / 10,
+          grade: ex?.grade ?? gradeOf(total),
           result_id: ex?.id ?? null,
           status: ex?.status ?? "draft",
         };
       });
-      setRows(built);
+
+      setStudentRows(rows);
       setSheetLoaded(true);
     } catch (err: any) {
-      console.error("[Sheet]", err?.response?.status, err?.response?.data);
-      notify(
-        false,
-        err?.response?.data?.detail ?? "Failed to load sheet — check backend",
-      );
+      showToast("error", err?.response?.data?.detail ?? "Failed to load sheet");
     } finally {
-      setSheetBusy(false);
+      setIsLoadingSheet(false);
     }
-  }, [selCourse, selClass, selTerm, selYear]);
+  }, [selectedCourse, selectedClass, selectedTerm, selectedYear, showToast]);
 
-  // ── Score update with auto-save ───────────────────────────────────────────
-  const updateScore = (idx: number, field: string, raw: string) => {
-    const mx: Record<string, number> = {
-      test1: 10,
-      test2: 10,
-      assignment: 10,
-      midterm: 10,
-      exam: 60,
-    };
-    const val =
-      raw === "" ? 0 : Math.min(mx[field] ?? 100, Math.max(0, Number(raw)));
-    setRows((prev) => {
-      const next = [...prev];
-      const row = { ...next[idx], [field]: val };
-      const t = row.test1 + row.test2 + row.assignment + row.midterm + row.exam;
-      row.total = Math.round(t * 10) / 10;
-      row.grade = grade(t);
-      next[idx] = row;
-      return next;
-    });
-    setSavedAt(null);
-    if (autoSave) {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => save(false), 2000);
-    }
-  };
+  const updateScore = useCallback(
+    (index: number, field: ScoreField, rawValue: string) => {
+      const value =
+        rawValue === ""
+          ? 0
+          : Math.min(SCHEME_MAX[field], Math.max(0, Number(rawValue)));
 
-  const save = async (toast_ = true) => {
-    if (!selCourse || rows.length === 0) return;
-    setSaving(true);
-    try {
-      await api.post("/results/bulk_entry/", {
-        course: selCourse,
-        term: TERM_KEY[selTerm],
-        academic_year: selYear,
-        results: rows.map((r) => ({
-          student: r.profile_id,
-          test1: r.test1,
-          test2: r.test2,
-          assignment: r.assignment,
-          midterm: r.midterm,
-          exam: r.exam,
-        })),
+      setStudentRows((prev) => {
+        const next = [...prev];
+        const row = { ...next[index], [field]: value };
+        const total =
+          row.test1 + row.test2 + row.assignment + row.midterm + row.exam;
+        row.total = Math.round(total * 10) / 10;
+        row.grade = gradeOf(total);
+        next[index] = row;
+        return next;
       });
-      setSavedAt(new Date());
-      if (toast_) notify(true, "Results saved ✅");
-    } catch (e: any) {
-      if (toast_) notify(false, e?.response?.data?.detail ?? "Save failed");
-    } finally {
-      setSaving(false);
-    }
-  };
 
-  const submit = async () => {
-    await save(false);
+      setLastSavedAt(null);
+
+      if (autoSave) {
+        if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = setTimeout(() => saveResults(false), 2000);
+      }
+    },
+    [autoSave],
+  );
+
+  const saveResults = useCallback(
+    async (showNotification = true) => {
+      if (!selectedCourse || studentRows.length === 0) return;
+
+      setIsSaving(true);
+      try {
+        await api.post("/results/bulk_entry/", {
+          course: selectedCourse,
+          term: TERM_KEY[selectedTerm],
+          academic_year: selectedYear,
+          results: studentRows.map((r) => ({
+            student: r.profile_id,
+            test1: r.test1,
+            test2: r.test2,
+            assignment: r.assignment,
+            midterm: r.midterm,
+            exam: r.exam,
+          })),
+        });
+
+        setLastSavedAt(new Date());
+        if (showNotification)
+          showToast("success", "Results saved successfully");
+      } catch (err: any) {
+        if (showNotification)
+          showToast("error", err?.response?.data?.detail ?? "Save failed");
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [selectedCourse, studentRows, selectedTerm, selectedYear, showToast],
+  );
+
+  const submitResults = useCallback(async () => {
+    await saveResults(false);
     try {
-      const r = await api.get("/results/", {
+      const res = await api.get("/results/", {
         params: {
-          course: selCourse,
-          term: TERM_KEY[selTerm],
-          academic_year: selYear,
+          course: selectedCourse,
+          term: TERM_KEY[selectedTerm],
+          academic_year: selectedYear,
           page_size: 200,
         },
       });
-      const all = Array.isArray(r.data) ? r.data : (r.data?.results ?? []);
+
+      const all = Array.isArray(res.data)
+        ? res.data
+        : (res.data?.results ?? []);
       await Promise.allSettled(
         all
           .filter((x: any) => x.status === "draft")
           .map((x: any) => api.post(`/results/${x.id}/submit/`)),
       );
-      notify(true, "Submitted for class teacher review ✅");
-      loadSheet();
+
+      showToast("success", "Submitted for review");
+      loadScoreSheet();
     } catch {
-      notify(false, "Submit failed");
+      showToast("error", "Submit failed");
     }
-  };
+  }, [
+    selectedCourse,
+    selectedTerm,
+    selectedYear,
+    saveResults,
+    loadScoreSheet,
+    showToast,
+  ]);
 
-  // ── Create assignment ─────────────────────────────────────────────────────
-  const createAssignment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!assignCourse) {
-      notify(false, "Select a subject");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await api.post("/assignments/", {
-        ...newAssign,
-        course: Number(assignCourse),
+  // ── Assignment Logic ──────────────────────────────────────────────────────
+  const createAssignment = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!assignCourse) {
+        showToast("error", "Select a subject");
+        return;
+      }
+
+      setIsSubmittingAssignment(true);
+      try {
+        await api.post("/assignments/", {
+          ...newAssignment,
+          deadline: newAssignment.deadline + "T23:59",
+          course: Number(assignCourse),
+        });
+
+        showToast("success", "Assignment created");
+        setNewAssignment({ title: "", description: "", deadline: "" });
+        setAssignClass("");
+        setAssignCourse("");
+        setShowAssignmentForm(false);
+        loadAssignments();
+      } catch (err: any) {
+        const error = err?.response?.data;
+        showToast(
+          "error",
+          error?.detail ??
+            error?.deadline?.[0] ??
+            error?.course?.[0] ??
+            error?.title?.[0] ??
+            "Failed to create assignment",
+        );
+      } finally {
+        setIsSubmittingAssignment(false);
+      }
+    },
+    [assignCourse, newAssignment, loadAssignments, showToast],
+  );
+
+  // ── Student Progress Logic ────────────────────────────────────────────────
+  const loadStudentProgress = useCallback(
+    async (
+      studentId: number,
+      name: string,
+      studentIdStr: string,
+      cls: string,
+    ) => {
+      setIsLoadingProgress(true);
+      setProgressStudent({
+        student_name: name,
+        student_id: studentIdStr,
+        student_class: cls,
+        results: [],
       });
-      notify(true, "Assignment created ✅");
-      setNewAssign({ title: "", description: "", due_date: "" });
-      setAssignClass("");
-      setAssignCourse("");
-      setShowForm(false);
-      loadAssignments();
-    } catch (e: any) {
-      notify(false, e?.response?.data?.detail ?? "Failed");
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
-  const courseName = allCourses.find((c) => c.id === selCourse)?.title ?? "";
-  const classLabel = selClass ? (CL[selClass] ?? selClass) : "";
+      try {
+        const res = await api.get("/results/", {
+          params: { student: studentId, page_size: 200 },
+        });
 
-  // ── Render ────────────────────────────────────────────────────────────────
+        const data = Array.isArray(res.data)
+          ? res.data
+          : (res.data?.results ?? []);
+        setProgressStudent({
+          student_name: name,
+          student_id: studentIdStr,
+          student_class: cls,
+          results: data.map((res: any) => ({
+            subject: res.course_title ?? `Course #${res.course}`,
+            total: res.total ?? 0,
+            grade: res.grade ?? "",
+            ca_total: res.ca_total ?? 0,
+            exam: res.exam ?? 0,
+            status: res.status ?? "draft",
+          })),
+        });
+      } catch {
+        showToast("error", "Failed to load progress");
+      } finally {
+        setIsLoadingProgress(false);
+      }
+    },
+    [showToast],
+  );
+
+  // ── Keyboard Shortcuts ────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (activeSection === "entry" && sheetLoaded) {
+        if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+          e.preventDefault();
+          saveResults(true);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeSection, sheetLoaded, saveResults]);
+
+  // ── Tabs Configuration ────────────────────────────────────────────────────
+  const tabs: TabConfig[] = [
+    { id: "entry", label: "Result Entry", icon: FileText },
+    { id: "assignments", label: "Assignments", icon: BookOpen },
+    {
+      id: "students",
+      label: "My Students",
+      icon: Users,
+      count: uniqueStudentIds.length,
+    },
+  ];
+
+  // ── Render 
   return (
     <TeacherLayout
       activeSection={activeSection}
-      onSectionChange={(s) => setActiveSection(s as any)}
+      onSectionChange={(s) => setActiveSection(s as SectionType)}
     >
-      {/* Toast */}
+      {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-xl text-sm font-medium max-w-xs
-              ${toast.ok ? "bg-green-600" : "bg-red-600"} text-white`}
-          >
-            {toast.ok ? "✅" : "❌"} {toast.msg}
-          </motion.div>
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
         )}
       </AnimatePresence>
 
-      {/* Section nav pills */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-2 flex gap-2">
-        {[
-          { id: "entry", label: "📊 Result Entry" },
-          { id: "assignments", label: "📝 Assignments" },
-        ].map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setActiveSection(s.id as any)}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition-colors
-              ${activeSection === s.id ? "bg-blue-600 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
-          >
-            {s.label}
-          </button>
-        ))}
-        {/* Course loading indicator */}
-        {!coursesReady && (
-          <span className="ml-auto text-xs text-gray-400 flex items-center gap-1.5">
-            <span className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            Loading courses…
-          </span>
-        )}
-        {coursesReady && allCourses.length > 0 && (
-          <span className="ml-auto text-xs text-green-600 dark:text-green-400 font-medium">
-            ✅ {allCourses.length} courses loaded
-          </span>
-        )}
+      {/* Navigation Tabs */}
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-3 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <nav className="flex items-center gap-1 bg-gray-100/50 dark:bg-gray-800/50 p-1 rounded-xl">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeSection === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveSection(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                    isActive
+                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                  {typeof tab.count === "number" && tab.count > 0 && (
+                    <span className="ml-1 text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full">
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            {coursesReady ? (
+              <Badge variant="success">
+                <CheckCircle2 className="w-3 h-3" />
+                {allCourses.length} courses
+              </Badge>
+            ) : (
+              <span className="flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Loading...
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-5">
-        {/* ══ RESULT ENTRY ══════════════════════════════════════════════════ */}
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* RESULT ENTRY SECTION                                               */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
         {activeSection === "entry" && (
           <>
-            {/* Filter card */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-700 to-blue-600 px-5 py-4">
-                <h2 className="text-white font-black text-base">
-                  📋 Result Entry
-                </h2>
-                <p className="text-blue-100 text-xs mt-0.5">
-                  Select class → subject → term → session, then load score sheet
-                </p>
-              </div>
-
-              <div className="p-5">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Class */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
-                      Class / Grade *
-                    </label>
-                    <select
-                      value={selClass}
-                      onChange={(e) => {
-                        setSelClass(e.target.value);
-                        setSelCourse("");
-                        setSheetLoaded(false);
-                        setRows([]);
-                      }}
-                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">— Select class —</option>
-                      {classOptions.map((c) => (
-                        <option key={c} value={c}>
-                          {CL[c] ?? c}
-                        </option>
-                      ))}
-                    </select>
-                    {classOptions.length === 0 && coursesReady && (
-                      <p className="text-xs text-red-500 mt-1">
-                        No classes found
-                      </p>
-                    )}
+            {/* Filters Card */}
+            <Card className="overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5 text-white" />
                   </div>
-
-                  {/* Subject */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
-                      Subject *{" "}
-                      {selClass && (
-                        <span className="text-blue-500 normal-case font-normal">
-                          ({subjectOptions.length})
-                        </span>
-                      )}
-                    </label>
-                    <select
-                      value={selCourse}
-                      onChange={(e) => {
-                        setSelCourse(
-                          e.target.value ? Number(e.target.value) : "",
-                        );
-                        setSheetLoaded(false);
-                        setRows([]);
-                      }}
-                      disabled={!selClass}
-                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <option value="">— Select subject —</option>
-                      {subjectOptions.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Term */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
-                      Term *
-                    </label>
-                    <select
-                      value={selTerm}
-                      onChange={(e) => {
-                        setSelTerm(e.target.value);
-                        setSheetLoaded(false);
-                      }}
-                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      {TERMS.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Session */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
-                      Session *
-                    </label>
-                    <select
-                      value={selYear}
-                      onChange={(e) => {
-                        setSelYear(e.target.value);
-                        setSheetLoaded(false);
-                      }}
-                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      {YEARS.map((y) => (
-                        <option key={y} value={y}>
-                          {y}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Load button */}
-                <div className="mt-4 flex items-center gap-3 flex-wrap">
-                  <button
-                    onClick={loadSheet}
-                    disabled={sheetBusy || !selCourse || !selClass}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white disabled:text-gray-400 rounded-xl font-semibold text-sm transition-colors"
-                  >
-                    {sheetBusy ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Loading…
-                      </>
-                    ) : (
-                      "🔄 Load Score Sheet"
-                    )}
-                  </button>
-                  {sheetLoaded && (
-                    <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                      ✅ {rows.length} student{rows.length !== 1 ? "s" : ""}{" "}
-                      loaded
-                    </span>
-                  )}
-                  {savedAt && (
-                    <span className="text-xs text-gray-400 ml-auto">
-                      Last saved{" "}
-                      {savedAt.toLocaleTimeString("en-GB", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      })}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Score sheet */}
-            {sheetLoaded && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                {/* Sheet header */}
-                <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h3 className="font-black text-gray-900 dark:text-white">
-                      End of Term Report Entry
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      <span className="font-semibold text-blue-600 dark:text-blue-400">
-                        {courseName}
-                      </span>
-                      {" · "}
-                      <span className="font-semibold">{classLabel}</span>
-                      {" · "}
-                      {selTerm}
-                      {" · "}
-                      {selYear}
+                    <h2 className="text-white font-bold text-lg">
+                      Result Entry
+                    </h2>
+                    <p className="text-blue-100 text-sm">
+                      {hasSubjectAssignments
+                        ? `Managing ${mySubjects.length} subjects across ${myClasses.length} classes`
+                        : "Select criteria to load score sheet"}
                     </p>
                   </div>
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <div
-                      onClick={() => setAutoSave((v) => !v)}
-                      className={`w-10 h-5 rounded-full transition-colors relative cursor-pointer ${autoSave ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"}`}
-                    >
-                      <div
-                        className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${autoSave ? "translate-x-5" : "translate-x-0.5"}`}
-                      />
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <Select
+                    label="Class *"
+                    value={selectedClass}
+                    onChange={(e) => {
+                      setSelectedClass(e.target.value);
+                      setSelectedCourse("");
+                      setSheetLoaded(false);
+                      setStudentRows([]);
+                    }}
+                  >
+                    <option value="">Select class</option>
+                    {classOptions.map((c) => (
+                      <option key={c} value={c}>
+                        {CL[c] ?? c}
+                      </option>
+                    ))}
+                  </Select>
+
+                  <Select
+                    label="Subject *"
+                    value={selectedCourse}
+                    onChange={(e) => {
+                      setSelectedCourse(
+                        e.target.value ? Number(e.target.value) : "",
+                      );
+                      setSheetLoaded(false);
+                      setStudentRows([]);
+                    }}
+                    disabled={!selectedClass}
+                    helperText={
+                      hasSubjectAssignments && selectedClass
+                        ? `${subjectOptions.length} subjects available`
+                        : undefined
+                    }
+                  >
+                    <option value="">
+                      {selectedClass ? "Select subject" : "Select class first"}
+                    </option>
+                    {subjectOptions.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </Select>
+
+                  <Select
+                    label="Term *"
+                    value={selectedTerm}
+                    onChange={(e) => {
+                      setSelectedTerm(e.target.value as TermType);
+                      setSheetLoaded(false);
+                    }}
+                  >
+                    {TERMS.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </Select>
+
+                  <Select
+                    label="Session *"
+                    value={selectedYear}
+                    onChange={(e) => {
+                      setSelectedYear(e.target.value);
+                      setSheetLoaded(false);
+                    }}
+                  >
+                    {YEARS.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <Button
+                    onClick={loadScoreSheet}
+                    isLoading={isLoadingSheet}
+                    disabled={!selectedCourse || !selectedClass}
+                  >
+                    {!isLoadingSheet && <TrendingUp className="w-4 h-4" />}
+                    {isLoadingSheet ? "Loading..." : "Load Score Sheet"}
+                  </Button>
+
+                  {sheetLoaded && (
+                    <div className="flex items-center gap-4">
+                      <Badge variant="success">
+                        <CheckCircle2 className="w-3 h-3" />
+                        {studentRows.length} students
+                      </Badge>
+
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <button
+                          type="button"
+                          onClick={() => setAutoSave((v) => !v)}
+                          className={`relative w-11 h-6 rounded-full transition-colors ${
+                            autoSave
+                              ? "bg-emerald-500"
+                              : "bg-gray-300 dark:bg-gray-600"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                              autoSave ? "translate-x-6" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                        <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                          Autosave
+                        </span>
+                      </label>
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                      Autosave {autoSave ? "ON" : "OFF"}
-                    </span>
-                  </label>
+                  )}
                 </div>
+              </div>
+            </Card>
 
-                {/* Score guide */}
-                <div className="px-5 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800 flex flex-wrap gap-4">
-                  {[
-                    ["1st Test", "10"],
-                    ["2nd Test", "10"],
-                    ["Assignment", "10"],
-                    ["Mid-term", "10"],
-                    ["Exam", "60"],
-                    ["Total", "100"],
-                  ].map(([l, m]) => (
-                    <span
-                      key={l}
-                      className={`text-xs font-semibold ${l === "Total" ? "text-green-700 dark:text-green-300 font-black" : l === "Exam" ? "text-purple-700 dark:text-purple-300" : "text-blue-700 dark:text-blue-300"}`}
+            {/* Score Sheet Table */}
+            {sheetLoaded && (
+              <Card className="overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-4 bg-gray-50/50 dark:bg-gray-800/30">
+                  <div>
+                    <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      {courseName}
+                      <span className="text-gray-300">|</span>
+                      <span className="text-gray-600 dark:text-gray-400 font-normal">
+                        {classLabel}
+                      </span>
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {selectedTerm} · {selectedYear}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => saveResults(true)}
+                      isLoading={isSaving}
+                      disabled={isSaving}
                     >
-                      {l} <span className="opacity-60">/{m}</span>
-                    </span>
-                  ))}
+                      <Save className="w-4 h-4" />
+                      Save
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={submitResults}
+                      disabled={isSaving}
+                    >
+                      <Upload className="w-4 h-4" />
+                      Submit
+                    </Button>
+                  </div>
                 </div>
 
-                {/* Table */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="bg-gray-800 dark:bg-gray-950 text-white text-xs">
-                        <th className="px-3 py-3 text-left font-semibold w-8">
+                      <tr className="bg-gray-900 dark:bg-gray-950 text-white">
+                        <th className="px-4 py-3 text-left font-semibold w-12">
                           #
                         </th>
-                        <th className="px-3 py-3 text-left font-semibold min-w-[90px]">
-                          ADM. NO.
+                        <th className="px-4 py-3 text-left font-semibold min-w-[100px]">
+                          ID
                         </th>
-                        <th className="px-3 py-3 text-left font-semibold min-w-[160px]">
-                          FULL NAME
+                        <th className="px-4 py-3 text-left font-semibold min-w-[180px]">
+                          Student Name
                         </th>
-                        <th className="px-2 py-3 text-center font-semibold w-16">
-                          1ST
-                          <br />
-                          <span className="text-[10px] opacity-50">/10</span>
-                        </th>
-                        <th className="px-2 py-3 text-center font-semibold w-16">
-                          2ND
-                          <br />
-                          <span className="text-[10px] opacity-50">/10</span>
-                        </th>
-                        <th className="px-2 py-3 text-center font-semibold w-16">
-                          ASSG
-                          <br />
-                          <span className="text-[10px] opacity-50">/10</span>
-                        </th>
-                        <th className="px-2 py-3 text-center font-semibold w-16">
-                          MID
-                          <br />
-                          <span className="text-[10px] opacity-50">/10</span>
-                        </th>
+                        {(Object.keys(SCHEME_MAX) as ScoreField[]).map(
+                          (key) => (
+                            <th
+                              key={key}
+                              className="px-2 py-3 text-center font-semibold w-20"
+                            >
+                              <div className="flex flex-col items-center">
+                                <span className="text-[10px] uppercase tracking-wider opacity-70">
+                                  {key.replace(/(\d)/, " $1")}
+                                </span>
+                                <span className="text-xs font-bold">
+                                  /{SCHEME_MAX[key]}
+                                </span>
+                              </div>
+                            </th>
+                          ),
+                        )}
                         <th className="px-2 py-3 text-center font-semibold w-20">
-                          EXAM
-                          <br />
-                          <span className="text-[10px] opacity-50">/60</span>
+                          Total
                         </th>
                         <th className="px-2 py-3 text-center font-semibold w-16">
-                          TOTAL
+                          Grade
                         </th>
-                        <th className="px-2 py-3 text-center font-semibold w-12">
-                          GRD
-                        </th>
-                        <th className="px-3 py-3 text-center font-semibold w-24">
-                          STATUS
+                        <th className="px-4 py-3 text-center font-semibold w-24">
+                          Status
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                      {rows.map((row, i) => (
-                        <tr
+                      {studentRows.map((row, index) => (
+                        <motion.tr
                           key={row.profile_id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.03 }}
                           className={
-                            i % 2 === 0
+                            index % 2 === 0
                               ? "bg-white dark:bg-gray-900"
-                              : "bg-gray-50 dark:bg-gray-800/50"
+                              : "bg-gray-50/50 dark:bg-gray-800/20"
                           }
                         >
-                          <td className="px-3 py-2 text-gray-400 text-xs font-mono">
-                            {i + 1}
+                          <td className="px-4 py-3 text-gray-400 font-mono text-xs">
+                            {index + 1}
                           </td>
-                          <td className="px-3 py-2 font-mono text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                          <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">
                             {row.student_id}
                           </td>
-                          <td className="px-3 py-2 font-semibold text-gray-900 dark:text-white text-xs">
+                          <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
                             {row.full_name}
                           </td>
-                          {(
-                            [
-                              "test1",
-                              "test2",
-                              "assignment",
-                              "midterm",
-                              "exam",
-                            ] as const
-                          ).map((f) => {
-                            const mx = {
-                              test1: 10,
-                              test2: 10,
-                              assignment: 10,
-                              midterm: 10,
-                              exam: 60,
-                            };
-                            const v = row[f] as number;
-                            return (
-                              <td key={f} className="px-1 py-1.5 text-center">
+                          {(Object.keys(SCHEME_MAX) as ScoreField[]).map(
+                            (field) => (
+                              <td key={field} className="px-1 py-2">
                                 <input
                                   type="number"
                                   min={0}
-                                  max={mx[f]}
-                                  value={v === 0 ? "" : v}
+                                  max={SCHEME_MAX[field]}
+                                  value={row[field] === 0 ? "" : row[field]}
                                   placeholder="—"
                                   onChange={(e) =>
-                                    updateScore(i, f, e.target.value)
+                                    updateScore(index, field, e.target.value)
                                   }
-                                  className={`w-14 px-1 py-1.5 text-center text-sm border rounded-lg
-                                    dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400
-                                    transition-colors
+                                  className={`w-full px-2 py-1.5 text-center text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all
                                     ${
-                                      v > 0 && v < mx[f] * 0.4
-                                        ? "border-orange-300 bg-orange-50 dark:bg-orange-900/20"
-                                        : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
+                                      row[field] > 0 &&
+                                      row[field] < SCHEME_MAX[field] * 0.4
+                                        ? "border-amber-300 bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-100"
+                                        : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                                     }`}
                                 />
                               </td>
-                            );
-                          })}
-                          <td className="px-2 py-2 text-center">
+                            ),
+                          )}
+                          <td className="px-2 py-3 text-center">
                             <span
-                              className="font-black text-sm"
-                              style={{
-                                color:
-                                  row.total > 0
-                                    ? (GRADE_FG[row.grade] ?? "#374151")
-                                    : "#9ca3af",
-                              }}
+                              className={`text-lg font-bold ${
+                                row.total > 0
+                                  ? "text-gray-900 dark:text-white"
+                                  : "text-gray-300"
+                              }`}
                             >
                               {row.total > 0 ? row.total : "—"}
                             </span>
                           </td>
-                          <td className="px-2 py-2 text-center">
+                          <td className="px-2 py-3 text-center">
                             {row.grade && (
                               <span
-                                className="px-2.5 py-0.5 rounded-full text-xs font-black"
-                                style={{
-                                  background: GRADE_BG[row.grade] ?? "#f3f4f6",
-                                  color: GRADE_FG[row.grade] ?? "#374151",
-                                }}
+                                className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-bold border ${
+                                  GRADE_STYLES[row.grade]?.bg
+                                } ${GRADE_STYLES[row.grade]?.text} ${
+                                  GRADE_STYLES[row.grade]?.border
+                                }`}
                               >
                                 {row.grade}
                               </span>
                             )}
                           </td>
-                          <td className="px-2 py-2 text-center">
+                          <td className="px-4 py-3 text-center">
                             <span
-                              className={`text-[10px] px-2 py-0.5 rounded-full font-semibold
-                              ${
-                                row.status === "published"
-                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                                  : row.status === "reviewed"
-                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                                    : row.status === "submitted"
-                                      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-                                      : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                              }`}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                                STATUS_STYLES[row.status]?.bg
+                              } ${STATUS_STYLES[row.status]?.text}`}
                             >
+                              {React.createElement(
+                                STATUS_STYLES[row.status]?.icon || FileText,
+                                { className: "w-3 h-3" },
+                              )}
                               {row.status}
                             </span>
                           </td>
-                        </tr>
+                        </motion.tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
 
-                {/* Action bar */}
-                <div className="px-5 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={() => save(true)}
-                    disabled={saving || rows.length === 0}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-xl font-semibold text-sm transition-colors"
-                  >
-                    {saving ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Saving…
-                      </>
-                    ) : (
-                      "💾 Save Results"
-                    )}
-                  </button>
-                  <button
-                    onClick={submit}
-                    disabled={saving || rows.length === 0}
-                    className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:bg-gray-300 text-white rounded-xl font-semibold text-sm transition-colors"
-                  >
-                    📤 Submit for Review
-                  </button>
-                  <div className="ml-auto text-xs text-gray-400">
-                    {rows.length} student{rows.length !== 1 ? "s" : ""} ·{" "}
-                    {selTerm} · {selYear}
+                {lastSavedAt && (
+                  <div className="px-6 py-3 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500 flex items-center justify-between">
+                    <span>Last saved {lastSavedAt.toLocaleTimeString()}</span>
+                    <span className="text-gray-400">Ctrl+S to save</span>
                   </div>
-                </div>
-              </div>
+                )}
+              </Card>
             )}
 
-            {/* Empty state */}
-            {!sheetLoaded && !sheetBusy && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 p-16 text-center">
-                <p className="text-5xl mb-3">📋</p>
-                <p className="font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  No score sheet loaded
-                </p>
-                <p className="text-sm text-gray-400 max-w-sm mx-auto">
-                  {!coursesReady
-                    ? "Loading courses from server…"
-                    : classOptions.length === 0
-                      ? "⚠️ No classes found. Make sure course.py and filters.py are updated in backend."
-                      : "Select a class, subject, term and session above, then click Load Score Sheet"}
-                </p>
-              </div>
+            {/* Empty State */}
+            {!sheetLoaded && !isLoadingSheet && (
+              <Card>
+                <EmptyState
+                  icon={FileText}
+                  title="No score sheet loaded"
+                  description={
+                    !coursesReady
+                      ? "Loading courses..."
+                      : classOptions.length === 0
+                        ? "No classes assigned. Contact admin."
+                        : "Select class, subject, term and session to begin"
+                  }
+                />
+              </Card>
             )}
           </>
         )}
 
-        {/* ══ ASSIGNMENTS ══════════════════════════════════════════════════ */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* ASSIGNMENTS SECTION                                                */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
         {activeSection === "assignments" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  📝 My Assignments
-                </h2>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {assignments.length} assignment
-                  {assignments.length !== 1 ? "s" : ""} created
-                </p>
-              </div>
-              <button
-                onClick={() => setShowForm((v) => !v)}
-                className={`px-4 py-2 rounded-xl font-semibold text-sm transition-colors
-                  ${showForm ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300" : "bg-blue-700 hover:bg-blue-800 text-white"}`}
-              >
-                {showForm ? "✕ Cancel" : "+ New Assignment"}
-              </button>
-            </div>
+          <div className="space-y-6">
+            <SectionHeader
+              title="Assignments"
+              subtitle={`${assignments.length} total assignments`}
+              action={
+                <Button
+                  onClick={() => setShowAssignmentForm((v) => !v)}
+                  variant={showAssignmentForm ? "secondary" : "primary"}
+                >
+                  {showAssignmentForm ? (
+                    <X className="w-4 h-4" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                  {showAssignmentForm ? "Cancel" : "New Assignment"}
+                </Button>
+              }
+            />
 
+            {/* Assignment Form */}
             <AnimatePresence>
-              {showForm && (
-                <motion.form
+              {showAssignmentForm && (
+                <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  onSubmit={createAssignment}
-                  className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 space-y-4 overflow-hidden"
                 >
-                  <h3 className="font-bold text-gray-900 dark:text-white">
-                    New Assignment
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">
-                        Class *
-                      </label>
-                      <select
-                        value={assignClass}
-                        onChange={(e) => {
-                          setAssignClass(e.target.value);
-                          setAssignCourse("");
-                        }}
-                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">— Select class —</option>
-                        {classOptions.map((c) => (
-                          <option key={c} value={c}>
-                            {CL[c] ?? c}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">
-                        Subject *
-                      </label>
-                      <select
-                        value={assignCourse}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                      Create New Assignment
+                    </h3>
+                    <form onSubmit={createAssignment} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Select
+                          label="Class *"
+                          value={assignClass}
+                          onChange={(e) => {
+                            setAssignClass(e.target.value);
+                            setAssignCourse("");
+                          }}
+                        >
+                          <option value="">Select class</option>
+                          {classOptions.map((c) => (
+                            <option key={c} value={c}>
+                              {CL[c] ?? c}
+                            </option>
+                          ))}
+                        </Select>
+
+                        <Select
+                          label="Subject *"
+                          value={assignCourse}
+                          onChange={(e) =>
+                            setAssignCourse(
+                              e.target.value ? Number(e.target.value) : "",
+                            )
+                          }
+                          disabled={!assignClass}
+                        >
+                          <option value="">Select subject</option>
+                          {assignmentSubjects.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.title}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="Assignment title *"
+                        required
+                        value={newAssignment.title}
                         onChange={(e) =>
-                          setAssignCourse(
-                            e.target.value ? Number(e.target.value) : "",
-                          )
+                          setNewAssignment((p) => ({
+                            ...p,
+                            title: e.target.value,
+                          }))
                         }
-                        disabled={!assignClass}
-                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                      >
-                        <option value="">— Select subject —</option>
-                        {assignSubjects.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.title}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Assignment title *"
-                    required
-                    value={newAssign.title}
-                    onChange={(e) =>
-                      setNewAssign((p) => ({ ...p, title: e.target.value }))
-                    }
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  />
-                  <textarea
-                    placeholder="Description (optional)"
-                    rows={3}
-                    value={newAssign.description}
-                    onChange={(e) =>
-                      setNewAssign((p) => ({
-                        ...p,
-                        description: e.target.value,
-                      }))
-                    }
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"
-                  />
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">
-                      Due Date *
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={newAssign.due_date}
-                      onChange={(e) =>
-                        setNewAssign((p) => ({
-                          ...p,
-                          due_date: e.target.value,
-                        }))
-                      }
-                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={submitting || !assignCourse}
-                    className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors"
-                  >
-                    {submitting ? "Creating…" : "✓ Create Assignment"}
-                  </button>
-                </motion.form>
+                        className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                      />
+
+                      <textarea
+                        placeholder="Description (optional)"
+                        rows={3}
+                        value={newAssignment.description}
+                        onChange={(e) =>
+                          setNewAssignment((p) => ({
+                            ...p,
+                            description: e.target.value,
+                          }))
+                        }
+                        className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm resize-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                      />
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                          Due Date *
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          value={newAssignment.deadline}
+                          min={new Date().toISOString().split("T")[0]}
+                          onChange={(e) =>
+                            setNewAssignment((p) => ({
+                              ...p,
+                              deadline: e.target.value,
+                            }))
+                          }
+                          className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        />
+                      </div>
+
+                      <div className="flex justify-end">
+                        <Button
+                          type="submit"
+                          isLoading={isSubmittingAssignment}
+                          disabled={!assignCourse}
+                        >
+                          Create Assignment
+                        </Button>
+                      </div>
+                    </form>
+                  </Card>
+                </motion.div>
               )}
             </AnimatePresence>
 
+            {/* Assignments List */}
             {assignments.length === 0 ? (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 p-12 text-center">
-                <p className="text-4xl mb-2">📝</p>
-                <p className="text-gray-500 dark:text-gray-400 font-medium">
-                  No assignments yet
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Click "+ New Assignment" to create one
-                </p>
-              </div>
+              <Card>
+                <EmptyState
+                  icon={BookOpen}
+                  title="No assignments yet"
+                  description="Create your first assignment to get started"
+                />
+              </Card>
             ) : (
-              <div className="space-y-3">
-                {assignments.map((a) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {assignments.map((assignment) => (
                   <motion.div
-                    key={a.id}
-                    whileHover={{ x: 3 }}
-                    className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5"
+                    key={assignment.id}
+                    whileHover={{ y: -2 }}
+                    className="group"
                   >
-                    <div className="flex justify-between items-start gap-3">
-                      <div>
-                        <p className="font-bold text-gray-900 dark:text-white">
-                          {a.title}
-                        </p>
-                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
-                          {a.course_title ?? `Course #${a.course}`}
-                        </p>
-                        {a.description && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-                            {a.description}
+                    <Card className="p-5 hover:shadow-md transition-shadow h-full">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {assignment.title}
+                          </h4>
+                          <p className="text-sm text-blue-600 dark:text-blue-400 mt-0.5">
+                            {assignment.course_title ??
+                              `Course #${assignment.course}`}
                           </p>
+                          {assignment.description && (
+                            <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+                              {assignment.description}
+                            </p>
+                          )}
+                        </div>
+                        {assignment.deadline && (
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-lg text-xs font-semibold shrink-0">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {formatDate(assignment.deadline)}
+                          </div>
                         )}
                       </div>
-                      {a.due_date && (
-                        <span className="shrink-0 text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-full font-semibold whitespace-nowrap">
-                          Due{" "}
-                          {new Date(a.due_date).toLocaleDateString("en-GB", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                      )}
-                    </div>
+                    </Card>
                   </motion.div>
                 ))}
               </div>
             )}
           </div>
         )}
+
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* MY STUDENTS SECTION                                                */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {activeSection === "students" && (
+          <div className="space-y-6">
+            <SectionHeader
+              title="My Students"
+              subtitle={`${uniqueStudentIds.length} students across ${mySubjects.length} subjects`}
+              action={
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search students..."
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                    className="pl-9 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm w-64 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                  />
+                </div>
+              }
+            />
+
+            {!subjectsReady ? (
+              <Card className="py-12 flex justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              </Card>
+            ) : mySubjects.length === 0 ? (
+              <Card>
+                <EmptyState
+                  icon={Users}
+                  title="No students assigned"
+                  description="Contact admin to set up subject assignments"
+                />
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {filteredSubjects.map((subject) => {
+                  const isOpen = expandedSubject === subject.subject;
+
+                  return (
+                    <Card key={subject.subject} className="overflow-hidden">
+                      <button
+                        onClick={() =>
+                          setExpandedSubject(isOpen ? null : subject.subject)
+                        }
+                        className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
+                            {subject.subject_display[0]}
+                          </div>
+                          <div className="text-left">
+                            <h4 className="font-bold text-gray-900 dark:text-white">
+                              {subject.subject_display}
+                            </h4>
+                            <p className="text-sm text-gray-500">
+                              {subject.students.length} students
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="info">
+                            {subject.students.length}
+                          </Badge>
+                          <ChevronDown
+                            className={`w-5 h-5 text-gray-400 transition-transform ${
+                              isOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        </div>
+                      </button>
+
+                      <AnimatePresence>
+                        {isOpen && (
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: "auto" }}
+                            exit={{ height: 0 }}
+                            className="overflow-hidden border-t border-gray-100 dark:border-gray-800"
+                          >
+                            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                              {subject.students.map((student, index) => {
+                                const name =
+                                  student.full_name ?? student.username;
+                                const displayClass = student.class_section
+                                  ? `${CL[student.class ?? ""] ?? student.class} (${student.class_section})`
+                                  : (CL[student.class ?? ""] ??
+                                      student.class) ||
+                                    "N/A";
+
+                                return (
+                                  <div
+                                    key={student.id}
+                                    className={`flex items-center justify-between px-5 py-3 ${
+                                      index % 2 === 0
+                                        ? "bg-white dark:bg-gray-900"
+                                        : "bg-gray-50/50 dark:bg-gray-800/20"
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
+                                        {getInitial(name)}
+                                      </div>
+                                      <div>
+                                        <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                                          {name}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                          {student.student_id && (
+                                            <span className="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+                                              {student.student_id}
+                                            </span>
+                                          )}
+                                          {displayClass && (
+                                            <Badge
+                                              variant="neutral"
+                                              className="text-[10px] py-0"
+                                            >
+                                              {displayClass}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        loadStudentProgress(
+                                          student.id,
+                                          name,
+                                          student.student_id ??
+                                            `#${student.id}`,
+                                          student.class ?? "",
+                                        )
+                                      }
+                                    >
+                                      <Eye className="w-4 h-4 mr-1" />
+                                      View
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* ═════════════════════════════════════════════════════════════════════ */}
+      {/* STUDENT PROGRESS MODAL                                              */}
+      {/* ═════════════════════════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {progressStudent && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setProgressStudent(null);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-xl">
+                    {getInitial(progressStudent.student_name)}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-lg">
+                      {progressStudent.student_name}
+                    </h3>
+                    <p className="text-indigo-100 text-sm">
+                      {progressStudent.student_id} ·{" "}
+                      {CL[progressStudent.student_class] ??
+                        progressStudent.student_class}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setProgressStudent(null)}
+                  className="text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {isLoadingProgress ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                  </div>
+                ) : progressStudent.results.length === 0 ? (
+                  <EmptyState
+                    icon={TrendingUp}
+                    title="No results yet"
+                    description="Results will appear here once published"
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {/* Average Summary */}
+                    {(() => {
+                      const published = progressStudent.results.filter(
+                        (r) => r.status === "published",
+                      );
+                      if (published.length === 0) return null;
+                      const avg =
+                        published.reduce((sum, r) => sum + r.total, 0) /
+                        published.length;
+
+                      return (
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 flex items-center justify-between border border-blue-100 dark:border-blue-800">
+                          <div>
+                            <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                              Overall Average
+                            </p>
+                            <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5">
+                              {published.length} subjects
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-3xl font-black text-blue-700 dark:text-blue-300">
+                              {avg.toFixed(1)}
+                            </p>
+                            <p className="text-xs text-blue-500 font-medium">
+                              /100
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Results List */}
+                    <div className="space-y-2">
+                      {progressStudent.results.map((result, index) => (
+                        <div
+                          key={index}
+                          className={`flex items-center justify-between p-3 rounded-xl ${
+                            index % 2 === 0
+                              ? "bg-gray-50 dark:bg-gray-800/50"
+                              : "bg-white dark:bg-gray-900"
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                              {result.subject}
+                            </p>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-xs text-gray-500">
+                                CA: {result.ca_total}/40
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                Exam: {result.exam}/60
+                              </span>
+                              <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                                  STATUS_STYLES[result.status]?.bg
+                                } ${STATUS_STYLES[result.status]?.text}`}
+                              >
+                                {result.status}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4 shrink-0">
+                            <span className="text-xl font-bold text-gray-900 dark:text-white">
+                              {result.total}
+                            </span>
+                            {result.grade && (
+                              <span
+                                className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold border ${
+                                  GRADE_STYLES[result.grade]?.bg
+                                } ${GRADE_STYLES[result.grade]?.text} ${
+                                  GRADE_STYLES[result.grade]?.border
+                                }`}
+                              >
+                                {result.grade}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </TeacherLayout>
   );
 };

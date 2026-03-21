@@ -82,6 +82,10 @@ class InstructorAssignmentViewSet(ModelViewSet):
         if not profile:
             return Assignment.objects.none()
 
+        # Filter by department — covers both old instructor FK and SubjectAssignment model
+        dept = getattr(profile, "department", None)
+        if dept:
+            return Assignment.objects.filter(course__department=dept)
         return Assignment.objects.filter(course__instructor=profile)
 
     def perform_create(self, serializer):

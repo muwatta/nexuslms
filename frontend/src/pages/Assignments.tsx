@@ -26,7 +26,7 @@ interface Assignment {
   course_title?: string;
   course_department?: string;
   student_class?: string;
-  due_date: string;
+  deadline: string;
   total_marks: number;
   created_by_name?: string;
   submission_count?: number;
@@ -116,8 +116,7 @@ const TeacherView: React.FC<{ notify: (ok: boolean, msg: string) => void }> = ({
     title: "",
     description: "",
     course: "",
-    due_date: "",
-    total_marks: "100",
+    deadline: "",
   });
   const [creating, setCreating] = useState(false);
 
@@ -139,7 +138,7 @@ const TeacherView: React.FC<{ notify: (ok: boolean, msg: string) => void }> = ({
   }, [load]);
 
   const handleCreate = async () => {
-    if (!form.title || !form.course || !form.due_date) {
+    if (!form.title || !form.course || !form.deadline) {
       notify(false, "Title, course and due date are required");
       return;
     }
@@ -147,23 +146,25 @@ const TeacherView: React.FC<{ notify: (ok: boolean, msg: string) => void }> = ({
     try {
       await api.post("/assignments/", {
         title: form.title,
-        description: form.description,
+        description: form.description || "",
         course: Number(form.course),
-        due_date: form.due_date,
-        total_marks: Number(form.total_marks) || 100,
+        deadline: form.deadline,
       });
       notify(true, "Assignment created");
       setShowCreate(false);
-      setForm({
-        title: "",
-        description: "",
-        course: "",
-        due_date: "",
-        total_marks: "100",
-      });
+      setForm({ title: "", description: "", course: "", deadline: "" });
       load();
     } catch (e: any) {
-      notify(false, e?.response?.data?.detail ?? "Failed to create assignment");
+      const err = e?.response?.data;
+      const msg =
+        typeof err === "string"
+          ? err
+          : (err?.detail ??
+            err?.course?.[0] ??
+            err?.title?.[0] ??
+            JSON.stringify(err) ??
+            "Failed to create assignment");
+      notify(false, msg);
     } finally {
       setCreating(false);
     }
@@ -275,7 +276,7 @@ const TeacherView: React.FC<{ notify: (ok: boolean, msg: string) => void }> = ({
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-xs text-gray-400">
-                        Due {fmtDate(a.due_date)}
+                        Due {fmtDate(a.deadline)}
                       </p>
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mt-1">
                         {graded}/{subs.length} graded
@@ -541,35 +542,18 @@ const TeacherView: React.FC<{ notify: (ok: boolean, msg: string) => void }> = ({
                     className={inputCls + " resize-none"}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-                      Due Date *
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={form.due_date}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, due_date: e.target.value }))
-                      }
-                      className={inputCls}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-                      Total Marks
-                    </label>
-                    <input
-                      type="number"
-                      value={form.total_marks}
-                      min={1}
-                      max={1000}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, total_marks: e.target.value }))
-                      }
-                      className={inputCls}
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
+                    Due Date *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={form.deadline}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, deadline: e.target.value }))
+                    }
+                    className={inputCls}
+                  />
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
@@ -865,7 +849,7 @@ const StudentView: React.FC<{ notify: (ok: boolean, msg: string) => void }> = ({
         <div className="space-y-4">
           {filtered.map((a) => {
             const sub = a.my_submission;
-            const days = daysLeft(a.due_date);
+            const days = daysLeft(a.deadline);
             const late = days < 0;
             const sf = subForms[a.id] ?? { text: "", file: null };
             const busy = submitting === a.id;
@@ -912,7 +896,7 @@ const StudentView: React.FC<{ notify: (ok: boolean, msg: string) => void }> = ({
                             : `${days}d left`}
                       </span>
                       <p className="text-xs text-gray-400 mt-1">
-                        Due {fmtDate(a.due_date)}
+                        Due {fmtDate(a.deadline)}
                       </p>
                       <p className="text-xs text-gray-400">
                         {a.total_marks} marks
@@ -1099,7 +1083,7 @@ const AdminView: React.FC = () => {
                     {a.course_title}
                   </td>
                   <td className="px-3 py-3 text-center text-xs text-gray-400 whitespace-nowrap">
-                    {fmtDate(a.due_date)}
+                    {fmtDate(a.deadline)}
                   </td>
                   <td className="px-3 py-3 text-center font-semibold text-gray-700 dark:text-gray-300">
                     {a.total_marks}

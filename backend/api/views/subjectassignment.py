@@ -1,4 +1,17 @@
 # backend/api/views/subjectassignment_views.py
+#
+# REST endpoints for SubjectAssignment.
+#
+#   GET    /api/subject-assignments/              → list (admin sees all; teacher sees own; student sees own)
+#   POST   /api/subject-assignments/              → create (admin only)
+#   GET    /api/subject-assignments/{id}/         → retrieve
+#   PATCH  /api/subject-assignments/{id}/         → update (admin only; marks is_auto_assigned=False)
+#   DELETE /api/subject-assignments/{id}/         → delete (admin only)
+#
+#   GET    /api/subject-assignments/my_subjects/  → current student: list their teacher assignments
+#   GET    /api/subject-assignments/my_students/  → current teacher: list their students per subject
+#
+# ─────────────────────────────────────────────────────────────────────────────
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -102,11 +115,16 @@ class SubjectAssignmentViewSet(viewsets.ModelViewSet):
                     "subject_display": sa.get_subject_display(),
                     "students": [],
                 }
+            p = getattr(sa.student, "profile", None)
+            fn = f"{sa.student.first_name} {sa.student.last_name}".strip() or sa.student.username
             grouped[key]["students"].append({
-                "id":           sa.student.id,
-                "username":     sa.student.username,
-                "class":        getattr(sa.student.profile, "student_class", None),
-                "department":   getattr(sa.student.profile, "department", None),
+                "id":            sa.student.id,
+                "username":      sa.student.username,
+                "full_name":     fn,
+                "student_id":    getattr(p, "student_id", "") or "",
+                "class":         getattr(p, "student_class", None),
+                "class_section": getattr(p, "class_section", "") or "",
+                "department":    getattr(p, "department", None),
                 "assignment_id": sa.id,
             })
 

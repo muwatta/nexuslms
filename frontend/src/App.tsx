@@ -1,6 +1,12 @@
 // frontend/src/App.tsx
 import React, { Suspense } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { PageLoader } from "./components/Skeleton";
 
 const Login = React.lazy(() => import("./pages/Login"));
@@ -144,338 +150,359 @@ const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 // ─── App ──────────────────────────────────────────────────────────────────────
+// Routes that have their own full-screen layout (no global Navbar)
+const SELF_LAYOUT_ROUTES = [
+  "/subject-teacher-dashboard",
+  "/class-teacher-dashboard",
+  "/teacher-dashboard",
+  "/subject-instructor-dashboard",
+  "/class-instructor-dashboard",
+  "/instructor-dashboard",
+];
+
 function App() {
   const isLoggedIn = !!localStorage.getItem("user_data");
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-        {isLoggedIn && <Navbar />}
-
-        <main className={isLoggedIn ? "pt-16" : ""}>
-          <ErrorBoundary>
-            <Suspense fallback={<PageLoader message="Loading page..." />}>
-              <Routes>
-                {/* ── Public ──────────────────────────────────────────── */}
-                <Route path="/" element={<HomeRouter />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/unauthorized" element={<Unauthorized />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/programs" element={<Programs />} />
-                <Route path="/locations" element={<Locations />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/practice" element={<PracticeQuestions />} />
-
-                {/* ── Generic dashboard ───────────────────────────────── */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <DashboardRouter />
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* ── Admin dashboards ────────────────────────────────── */}
-                <Route
-                  path="/admin-dashboard"
-                  element={
-                    <ProtectedRoute requiredPermission="admin.access">
-                      <Page>
-                        <AdminDashboard />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/super-admin-portal"
-                  element={
-                    <ProtectedRoute allowedRoles={["super_admin"]}>
-                      <Page>
-                        <SuperAdminPortal />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin"
-                  element={
-                    <ProtectedRoute requiredPermission="admin.access">
-                      <Navigate to="/admin-dashboard" replace />
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* ── Department / school dashboards ──────────────────── */}
-                <Route
-                  path="/western-dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Page>
-                        <WesternDashboard />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/arabic-dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Page>
-                        <ArabicDashboard />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/digital-dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Page>
-                        <ProgrammingDashboard />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* ── Student / parent ────────────────────────────────── */}
-                <Route
-                  path="/student-dashboard"
-                  element={
-                    <ProtectedRoute allowedRoles={["student", "parent"]}>
-                      <Page>
-                        <StudentDashboard />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/parent-portal"
-                  element={
-                    <ProtectedRoute allowedRoles={["parent"]}>
-                      <Page>
-                        <ParentPortal />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* ── Teacher dashboards (new canonical routes) ───────── */}
-                <Route
-                  path="/teacher-dashboard"
-                  element={
-                    <ProtectedRoute allowedRoles={["teacher"]}>
-                      <Page>
-                        <TeacherDashboard />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/subject-teacher-dashboard"
-                  element={
-                    <ProtectedRoute allowedRoles={["teacher"]}>
-                      <Page>
-                        <SubjectTeacherDashboard />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/class-teacher-dashboard"
-                  element={
-                    <ProtectedRoute allowedRoles={["teacher"]}>
-                      <Page>
-                        <ClassTeacherDashboard />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* ── Legacy instructor routes → redirect to teacher ───── */}
-                <Route
-                  path="/instructor-dashboard"
-                  element={<Navigate to="/teacher-dashboard" replace />}
-                />
-                <Route
-                  path="/subject-instructor-dashboard"
-                  element={<Navigate to="/subject-teacher-dashboard" replace />}
-                />
-                <Route
-                  path="/class-instructor-dashboard"
-                  element={<Navigate to="/class-teacher-dashboard" replace />}
-                />
-
-                {/* ── Non-teaching staff ──────────────────────────────── */}
-                {/* StaffDashboard page doesn't exist yet — falls back to /dashboard */}
-                <Route
-                  path="/staff-dashboard"
-                  element={
-                    <ProtectedRoute allowedRoles={["non_teaching"]}>
-                      <Page>
-                        <Dashboard />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* ── Visitor ─────────────────────────────────────────── */}
-                <Route
-                  path="/visitor"
-                  element={
-                    <ProtectedRoute allowedRoles={["visitor"]}>
-                      <Page>
-                        <Dashboard />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* ── Core features ───────────────────────────────────── */}
-                <Route
-                  path="/courses"
-                  element={
-                    <ProtectedRoute requiredPermission="course.view">
-                      <Page>
-                        <Courses />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/enrollments"
-                  element={
-                    <ProtectedRoute requiredPermission="enrollment.view">
-                      <Page>
-                        <Enrollments />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/assignments"
-                  element={
-                    <ProtectedRoute requiredPermission="assignment.view">
-                      <Page>
-                        <Assignments />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/quizzes"
-                  element={
-                    <ProtectedRoute requiredPermission="quiz.view">
-                      <Page>
-                        <Quizzes />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/payments"
-                  element={
-                    <ProtectedRoute requiredPermission="payment.view">
-                      <Page>
-                        <Payments />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/analytics"
-                  element={
-                    <ProtectedRoute requiredPermission="analytics.view">
-                      <Page>
-                        <Analytics />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/achievements"
-                  element={
-                    <ProtectedRoute requiredPermission="course.view">
-                      <Page>
-                        <ViewAchievements />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/projects"
-                  element={
-                    <ProtectedRoute requiredPermission="course.view">
-                      <Page>
-                        <ViewProjects />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/milestones"
-                  element={
-                    <ProtectedRoute requiredPermission="course.view">
-                      <Page>
-                        <ViewMilestones />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/ai"
-                  element={
-                    <ProtectedRoute>
-                      <Page>
-                        <AIHelp />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <Page>
-                        <Profile />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/manage-users"
-                  element={
-                    <ProtectedRoute requiredPermission="user.create">
-                      <Page>
-                        <ManageUsers />
-                      </Page>
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* ── Catch-all ───────────────────────────────────────── */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
-          </ErrorBoundary>
-        </main>
-
-        {isLoggedIn && (
-          <>
-            <ErrorBoundary fallback={null}>
-              <AIChat />
-            </ErrorBoundary>
-            <ErrorBoundary fallback={null}>
-              <Notifications />
-            </ErrorBoundary>
-          </>
-        )}
-      </div>
+      <AppInner isLoggedIn={isLoggedIn} />
     </BrowserRouter>
   );
 }
+
+// Inner component so we can use useLocation inside BrowserRouter
+const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
+  const { pathname } = useLocation();
+  const isSelfLayout = SELF_LAYOUT_ROUTES.some((r) => pathname.startsWith(r));
+  const showNavbar = isLoggedIn && !isSelfLayout;
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      {showNavbar && <Navbar />}
+
+      <main className={showNavbar ? "pt-16" : ""}>
+        <ErrorBoundary>
+          <Suspense fallback={<PageLoader message="Loading page..." />}>
+            <Routes>
+              {/* ── Public ──────────────────────────────────────────── */}
+              <Route path="/" element={<HomeRouter />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/programs" element={<Programs />} />
+              <Route path="/locations" element={<Locations />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/practice" element={<PracticeQuestions />} />
+
+              {/* ── Generic dashboard ───────────────────────────────── */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardRouter />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ── Admin dashboards ────────────────────────────────── */}
+              <Route
+                path="/admin-dashboard"
+                element={
+                  <ProtectedRoute requiredPermission="admin.access">
+                    <Page>
+                      <AdminDashboard />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/super-admin-portal"
+                element={
+                  <ProtectedRoute allowedRoles={["super_admin"]}>
+                    <Page>
+                      <SuperAdminPortal />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requiredPermission="admin.access">
+                    <Navigate to="/admin-dashboard" replace />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ── Department / school dashboards ──────────────────── */}
+              <Route
+                path="/western-dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Page>
+                      <WesternDashboard />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/arabic-dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Page>
+                      <ArabicDashboard />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/digital-dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Page>
+                      <ProgrammingDashboard />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ── Student / parent ────────────────────────────────── */}
+              <Route
+                path="/student-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["student", "parent"]}>
+                    <Page>
+                      <StudentDashboard />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/parent-portal"
+                element={
+                  <ProtectedRoute allowedRoles={["parent"]}>
+                    <Page>
+                      <ParentPortal />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ── Teacher dashboards (new canonical routes) ───────── */}
+              <Route
+                path="/teacher-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["teacher"]}>
+                    <Page>
+                      <TeacherDashboard />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/subject-teacher-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["teacher"]}>
+                    <Page>
+                      <SubjectTeacherDashboard />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/class-teacher-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["teacher"]}>
+                    <Page>
+                      <ClassTeacherDashboard />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ── Legacy instructor routes → redirect to teacher ───── */}
+              <Route
+                path="/instructor-dashboard"
+                element={<Navigate to="/teacher-dashboard" replace />}
+              />
+              <Route
+                path="/subject-instructor-dashboard"
+                element={<Navigate to="/subject-teacher-dashboard" replace />}
+              />
+              <Route
+                path="/class-instructor-dashboard"
+                element={<Navigate to="/class-teacher-dashboard" replace />}
+              />
+
+              {/* ── Non-teaching staff ──────────────────────────────── */}
+              {/* StaffDashboard page doesn't exist yet — falls back to /dashboard */}
+              <Route
+                path="/staff-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["non_teaching"]}>
+                    <Page>
+                      <Dashboard />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ── Visitor ─────────────────────────────────────────── */}
+              <Route
+                path="/visitor"
+                element={
+                  <ProtectedRoute allowedRoles={["visitor"]}>
+                    <Page>
+                      <Dashboard />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ── Core features ───────────────────────────────────── */}
+              <Route
+                path="/courses"
+                element={
+                  <ProtectedRoute requiredPermission="course.view">
+                    <Page>
+                      <Courses />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/enrollments"
+                element={
+                  <ProtectedRoute requiredPermission="enrollment.view">
+                    <Page>
+                      <Enrollments />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/assignments"
+                element={
+                  <ProtectedRoute requiredPermission="assignment.view">
+                    <Page>
+                      <Assignments />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/quizzes"
+                element={
+                  <ProtectedRoute requiredPermission="quiz.view">
+                    <Page>
+                      <Quizzes />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/payments"
+                element={
+                  <ProtectedRoute requiredPermission="payment.view">
+                    <Page>
+                      <Payments />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/analytics"
+                element={
+                  <ProtectedRoute requiredPermission="analytics.view">
+                    <Page>
+                      <Analytics />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/achievements"
+                element={
+                  <ProtectedRoute requiredPermission="course.view">
+                    <Page>
+                      <ViewAchievements />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects"
+                element={
+                  <ProtectedRoute requiredPermission="course.view">
+                    <Page>
+                      <ViewProjects />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/milestones"
+                element={
+                  <ProtectedRoute requiredPermission="course.view">
+                    <Page>
+                      <ViewMilestones />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/ai"
+                element={
+                  <ProtectedRoute>
+                    <Page>
+                      <AIHelp />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Page>
+                      <Profile />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/manage-users"
+                element={
+                  <ProtectedRoute requiredPermission="user.create">
+                    <Page>
+                      <ManageUsers />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ── Catch-all ───────────────────────────────────────── */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
+      </main>
+
+      {isLoggedIn && (
+        <>
+          <ErrorBoundary fallback={null}>
+            <AIChat />
+          </ErrorBoundary>
+          <ErrorBoundary fallback={null}>
+            <Notifications />
+          </ErrorBoundary>
+        </>
+      )}
+    </div>
+  );
+};
 
 export default App;

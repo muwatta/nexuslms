@@ -6,9 +6,12 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 
+# ── Helpers 
 
 def _current_academic_year() -> str:
+    """Return current academic year string e.g. '2025/2026'."""
     now = timezone.now()
+    # Nigerian academic year runs Sept–Aug
     if now.month >= 9:
         return f"{now.year}/{now.year + 1}"
     return f"{now.year - 1}/{now.year}"
@@ -101,6 +104,8 @@ def _unenroll_old_class(profile, old_class):
                 enrollment.delete()
 
 
+# ── Store old student_class BEFORE save ───────────────────────────────────────
+
 @receiver(pre_save, sender="api.Profile")
 def profile_pre_save(sender, instance, **kwargs):
     """Cache previous student_class so post_save can detect changes."""
@@ -117,7 +122,7 @@ def profile_pre_save(sender, instance, **kwargs):
         instance._old_department    = None
 
 
-# ── Auto-enroll AFTER save ────────────────────────────────────────────────────
+# ── Auto-enroll AFTER save 
 
 @receiver(post_save, sender="api.Profile")
 def profile_post_save(sender, instance, created, **kwargs):
@@ -140,6 +145,94 @@ def profile_post_save(sender, instance, created, **kwargs):
 
     if new_class:
         _auto_enroll_student(instance)
+        _auto_assign_subjects(instance)
+
+
+def _auto_assign_subjects(profile):
+    """
+    When a student is assigned to a class, auto-assign them to teachers
+    in their department who teach that class.  Only creates assignments
+    that don't already exist (safe to call multiple times).
+    """
+    from api.models.subjectassignment import SubjectAssignment
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    student_class = getattr(profile, "student_class", None)
+    department    = getattr(profile, "department", None)
+    if not student_class or not department:
+        return
+
+    # Find teachers in the same department
+    teachers = User.objects.filter(
+        profile__role="teacher",
+        profile__department=department,
+    ).select_related("profile")
+
+    if not teachers.exists():
+        return
+
+    # Get all subjects that have courses for this class
+    from api.models import Course
+    subjects = list(
+        Course.objects.filter(
+            department=department,
+            student_class=student_class,
+            is_active=True,
+        ).values_list("title", flat=True)
+    )
+
+    if not subjects:
+        return
+
+    # Assign first available teacher per subject (round-robin if multiple)
+    # This is a simple auto-assign — admin can override manually
+    teacher_list = list(teachers)
+    created_count = 0
+
+    # Use subject code mapping from course title
+    # e.g. "Mathematics — JSS 2" → derive subject key from first word
+    SUBJECT_MAP = {
+        "english": "english_language", "mathematics": "mathematics",
+        "basic science": "basic_science", "basic technology": "basic_technology",
+        "social studies": "social_studies", "civic": "civic_education",
+        "cultural": "cultural_creative_arts", "physical": "physical_health_education",
+        "computer": "computer_studies_ict", "religious": "religious_studies",
+        "agricultural": "agricultural_science", "home": "home_management",
+        "business": "business_studies", "french": "french",
+        "arabic": "arabic", "yoruba": "yoruba",
+        "biology": "biology", "chemistry": "chemistry",
+        "physics": "physics", "further": "further_mathematics",
+        "geography": "geography", "literature": "literature_in_english",
+        "government": "government", "economics": "economics",
+        "commerce": "commerce", "financial": "financial_accounting",
+        "marketing": "marketing", "music": "music",
+        "visual": "visual_arts", "health": "health_education",
+    }
+
+    for i, course_title in enumerate(subjects):
+        first_word = course_title.split()[0].lower() if course_title else ""
+        subject_key = SUBJECT_MAP.get(first_word)
+        if not subject_key:
+            continue
+
+        teacher = teacher_list[i % len(teacher_list)]
+
+        _, was_created = SubjectAssignment.objects.get_or_create(
+            student=profile.user,
+            subject=subject_key,
+            defaults={
+                "teacher": teacher,
+                "is_auto_assigned": True,
+            },
+        )
+        if was_created:
+            created_count += 1
+
+    if created_count:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"[signal] Auto-assigned {created_count} subjects for {profile.user.username}")
 
 
 # ── Sync role → Django Groups (called explicitly, NOT as a receiver) ──────────
@@ -152,13 +245,14 @@ def sync_role_to_groups(sender, instance, created, **kwargs):
     """
     from django.contrib.auth.models import Group
 
+    # ── Group names MUST match exactly what is in the DB (from fix_group_permissions) ──
     ROLE_GROUP_MAP = {
-        "super_admin":  "User Managers",   
+        "super_admin":  "User Managers",   # super admins get full user management
         "admin":        "User Managers",
         "school_admin": "User Managers",
-        "teacher":      "Teachers",       
+        "teacher":      "Teachers",        # was "Teacher" — DB has "Teachers" (plural)
         "non_teaching": "Non-Teaching Staff",
-        "student":      "Students",       
+        "student":      "Students",        # was "Student" — DB has "Students" (plural)
         "parent":       "Visitors",
         "visitor":      "Visitors",
     }
