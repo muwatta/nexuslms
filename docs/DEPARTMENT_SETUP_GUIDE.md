@@ -1,8 +1,8 @@
-# Muwata Academy - Department-Based LMS Platform Update
+# Muwatta Academy - Department-Based LMS Platform Update
 
 ## Summary of Changes
 
-This update transforms the generic LMS into a professional, department-specific school platform called **Muwata Academy** with three distinct schools and enhanced student tracking features.
+This update transforms the generic LMS into a professional, department-specific school platform called **Muwatta Academy** with three distinct schools and enhanced student tracking features.
 
 ---
 
@@ -163,7 +163,7 @@ Three distinct dashboard layouts based on student's department:
 
 (`frontend/src/pages/Landing.tsx`)
 
-- Professional hero section with Muwata Academy branding
+- Professional hero section with Muwatta Academy branding
 - 3 Program cards:
   - 🌍 Western School
   - 🕌 Arabic School
@@ -434,6 +434,6 @@ For issues or questions:
 
 ---
 
-**Platform**: Muwata Academy
+**Platform**: Muwatta Academy
 **Version**: 2.0 (Department-Based)
 **Last Updated**: 2024

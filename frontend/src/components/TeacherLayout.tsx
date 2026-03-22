@@ -135,7 +135,7 @@ const TeacherLayout: React.FC<TeacherLayoutProps> = ({
           {!collapsed && (
             <div className="min-w-0">
               <p className="font-black text-sm leading-tight truncate">
-                Muwata Academy
+                Muwatta Academy
               </p>
               <p className="text-xs text-white/60 capitalize">{dept} Dept</p>
             </div>

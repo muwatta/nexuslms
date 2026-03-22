@@ -124,7 +124,7 @@ def password_reset_request(request):
 
     try:
         send_mail(
-            subject="Muwata Academy - Password Reset Code",
+            subject="Muwatta Academy - Password Reset Code",
             message=f"Your password reset code is: {otp}\n\nThis code will expire in 10 minutes.",
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[email],

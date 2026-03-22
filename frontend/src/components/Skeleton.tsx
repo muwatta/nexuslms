@@ -192,7 +192,6 @@ export function SkeletonCourseCard() {
   );
 }
 
-
 interface SkeletonTableRowProps {
   cols?: number;
   showAvatar?: boolean;
@@ -469,7 +468,7 @@ export function PageLoader({ message = "Loading…" }: PageLoaderProps) {
           letterSpacing: "0.05em",
         }}
       >
-        Muwata<span style={{ color: "#d4af37" }}>Academy</span>
+        Muwatta<span style={{ color: "#d4af37" }}>Academy</span>
       </div>
 
       {/* Message */}

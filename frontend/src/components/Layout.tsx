@@ -79,7 +79,7 @@ const Layout: React.FC<LayoutProps> = ({
               </div>
               <div className="hidden sm:block">
                 <span className="font-bold text-xl text-slate-900 dark:text-white">
-                  Muwata
+                  Muwatta
                 </span>
                 <span className="text-sm text-slate-500 dark:text-slate-400 block -mt-1">
                   Academy

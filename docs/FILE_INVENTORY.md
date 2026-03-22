@@ -1,4 +1,4 @@
-# File Inventory - Muwata Academy v2.0 Redesign
+# File Inventory - Muwatta Academy v2.0 Redesign
 
 ## Overview
 
@@ -714,4 +714,4 @@ Total Files: 25
 - Status: ✅ All changes documented
 
 Last Updated: 2024
-Platform: Muwata Academy LMS v2.0
+Platform: Muwatta Academy LMS v2.0

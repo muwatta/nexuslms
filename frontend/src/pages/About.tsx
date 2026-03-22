@@ -11,10 +11,10 @@ const About: React.FC = () => {
     >
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-          About Muwata Academy
+          About Muwatta Academy
         </h1>
         <p className="text-gray-700 dark:text-gray-300 mb-6">
-          Muwata Academy provides high-quality instruction across three
+          Muwatta Academy provides high-quality instruction across three
           departments: Western School, Arabic School, and Programming. We
           combine modern pedagogy with an AI tutor to support students at every
           level.

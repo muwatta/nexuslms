@@ -1,4 +1,4 @@
-# Muwata Academy - System Architecture Overview
+# Muwatta Academy - System Architecture Overview
 
 ## 🏗️ System Components
 
@@ -14,7 +14,7 @@
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  Landing Page (Public)                                           │
-│  ├─ Hero Section (Muwata Academy)                                │
+│  ├─ Hero Section (Muwatta Academy)                                │
 │  ├─ 3 Program Cards (Western, Arabic, Programming)              │
 │  └─ Features Section                                             │
 │                                                                   │
@@ -580,5 +580,5 @@ All API responses follow consistent format:
 ---
 
 **Architecture Last Updated**: 2024
-**Platform**: Muwata Academy LMS v2.0
+**Platform**: Muwatta Academy LMS v2.0
 **Status**: Production-Ready

@@ -1,8 +1,8 @@
-# 📚 Muwata Academy LMS v2.0 - Documentation Index
+# 📚 Muwatta Academy LMS v2.0 - Documentation Index
 
 ## Welcome! Start Here 👋
 
-This document is your guide to all the changes made to transform the generic LMS into a professional, department-based platform for Muwata Academy.
+This document is your guide to all the changes made to transform the generic LMS into a professional, department-based platform for Muwatta Academy.
 
 ---
 
@@ -491,11 +491,11 @@ Use this to verify everything works:
 
 Everything is documented. Everything is implemented. Everything is ready to deploy.
 
-**Start with [QUICK_SETUP.md](QUICK_SETUP.md) and launch Muwata Academy v2.0!** 🎓
+**Start with [QUICK_SETUP.md](QUICK_SETUP.md) and launch Muwatta Academy v2.0!** 🎓
 
 ---
 
-**Platform**: Muwata Academy LMS  
+**Platform**: Muwatta Academy LMS  
 **Version**: 2.0 (Department-Based)  
 **Status**: ✅ Complete & Ready  
 **Last Updated**: 2024

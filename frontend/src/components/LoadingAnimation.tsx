@@ -442,7 +442,7 @@ const Navbar: React.FC = () => {
                   letterSpacing: "-0.3px",
                 }}
               >
-                Muwata
+                Muwatta
               </span>
             </Link>
           </div>

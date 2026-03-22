@@ -183,7 +183,7 @@ const Navbar: React.FC = () => {
     localStorage.getItem("dark_mode") === "true",
   );
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [openMenu, setOpenMenu] = useState<string | null>(null); 
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [liveUser, setLiveUser] = useState<any>(() => getUserData());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -429,7 +429,7 @@ const Navbar: React.FC = () => {
                   letterSpacing: "-0.3px",
                 }}
               >
-                Muwata
+                Muwatta
               </span>
             </Link>
           </div>

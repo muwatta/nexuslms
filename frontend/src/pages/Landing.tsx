@@ -24,9 +24,9 @@ import api from "../api"; // Use our secure API instance
 const WHATSAPP_NUMBER = "+2349026642320";
 
 // ─── SYSTEM PROMPT ────────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are Muwata AI, the friendly assistant for Muwata Academy — an online educational institution in Nigeria.
+const SYSTEM_PROMPT = `You are Muwatta AI, the friendly assistant for Muwatta Academy — an online educational institution in Nigeria.
 
-Muwata Academy has three schools:
+Muwatta Academy has three schools:
 1. Western School: English curriculum, Mathematics, Sciences, critical thinking
 2. Arabic School: Quran, Arabic language, Fiqh, Hadith, Islamic Studies
 3. Tech Academy: Web development, Python, project-based programming
@@ -51,7 +51,7 @@ const Landing: React.FC = () => {
     {
       role: "assistant",
       content:
-        "Hello! I'm Muwata AI. How can I help you learn about our programs today? 👋",
+        "Hello! I'm Muwatta AI. How can I help you learn about our programs today? 👋",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
@@ -67,7 +67,7 @@ const Landing: React.FC = () => {
 
   const handleWhatsAppClick = () => {
     const message = encodeURIComponent(
-      "Hello! I'm interested in learning more about Muwata Academy programs.",
+      "Hello! I'm interested in learning more about Muwatta Academy programs.",
     );
     window.open(
       `https://wa.me/${WHATSAPP_NUMBER.replace("+", "")}?text=${message}`,
@@ -385,16 +385,16 @@ const Landing: React.FC = () => {
       </section>
 
       {/* ── CTA Section ─────────────────────────────────────────────────── */}
-      <section className="py-20 lg:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-violet-700" />
+      <section className="py-10 lg:py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-violet-700" />
         <div className="max-w-4xl mx-auto px-4 relative text-center">
           <h2 className="text-3xl sm:text-5xl font-bold text-white mb-6">
             Ready to Start?
           </h2>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               to="/signup"
-              className="px-8 py-4 bg-white text-blue-600 font-bold rounded-full hover:shadow-xl transition-all hover:-translate-y-1"
+              className="px-8 py-4 bg-transparent text-white font-bold rounded-full border-2 border-white/30 hover:bg-white/10 transition-colors"
             >
               Get Started Free
             </Link>
@@ -418,7 +418,7 @@ const Landing: React.FC = () => {
                   M
                 </div>
                 <span className="font-bold text-xl text-white">
-                  Muwata Academy
+                  Muwatta Academy
                 </span>
               </div>
               <p className="mb-4">Empowering students since 2024.</p>
@@ -467,7 +467,7 @@ const Landing: React.FC = () => {
             </div>
           </div>
           <div className="pt-8 border-t border-slate-800 text-center">
-            <p>&copy; 2026 Muwata Academy. All rights reserved.</p>
+            <p>&copy; 2026 Muwatta Academy. All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -497,7 +497,7 @@ const Landing: React.FC = () => {
               <div className="flex items-center gap-2 text-white">
                 <Bot size={24} />
                 <div>
-                  <h3 className="font-bold">Muwata AI</h3>
+                  <h3 className="font-bold">Muwatta AI</h3>
                   <p className="text-xs opacity-80">Powered by Claude</p>
                 </div>
               </div>

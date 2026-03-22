@@ -222,7 +222,7 @@ export default function Login() {
             <div className={`brand ${mounted ? "vis" : ""}`}>
               <div className="seal">☽</div>
               <div className="bname">
-                Muwata<span> Academy</span>
+                Muwatta<span> Academy</span>
               </div>
             </div>
             <div className={`ht ${mounted ? "vis" : ""}`}>
