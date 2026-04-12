@@ -2,10 +2,12 @@
 
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 from api.models import Course, PracticeQuestion
 from api.serializers import CourseSerializer, PracticeQuestionSerializer
 from api.permissions import IsAdminOrInstructor
 from api.filters import CourseFilter
+from api.pdf_utils import generate_course_syllabus_pdf
 
 
 class CourseViewSet(ModelViewSet):
@@ -54,6 +56,11 @@ class CourseViewSet(ModelViewSet):
 
         # ── Everyone else ────────────────────────────────────────────────────
         return Course.objects.none()
+
+    @action(detail=True, methods=['get'], url_path='syllabus/pdf')
+    def syllabus_pdf(self, request, pk=None):
+        course = self.get_object()
+        return generate_course_syllabus_pdf(course)
 
 
 class PracticeQuestionViewSet(ModelViewSet):
