@@ -6,6 +6,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.utils import timezone
 
 from api.models import Quiz, QuizSubmission, Question, Course
+from api.pdf_utils import generate_quiz_result_pdf
 from api.serializers import QuizSerializer, QuizSubmissionSerializer, QuestionSerializer
 from api.filters import QuizFilter
 
@@ -46,16 +47,18 @@ class QuizSubmissionViewSet(ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         user = self.request.user
-        if hasattr(user, 'role') and user.role == 'instructor':
+        role = getattr(user, 'profile', None) and user.profile.role
+        if role == 'instructor':
             try:
                 user_profile = user.profile
-                # Get quizzes from courses taught by this instructor
                 instructor_course_ids = Course.objects.filter(instructor=user_profile).values_list('id', flat=True)
                 quiz_ids = Quiz.objects.filter(course_id__in=instructor_course_ids).values_list('id', flat=True)
                 return qs.filter(quiz_id__in=quiz_ids)
-            except:
+            except Exception:
                 return qs.none()
-        return qs
+        if role == 'admin':
+            return qs
+        return qs.filter(published=True)
 
     def perform_create(self, serializer):
         user_profile = self.request.user.profile
@@ -107,14 +110,6 @@ class QuizSubmissionViewSet(ModelViewSet):
         
         return score  
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        user = self.request.user
-        role = getattr(user, 'profile', None) and user.profile.role
-        if role in ["instructor", "admin"]:
-            return qs
-        return qs.filter(published=True)
-
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def publish(self, request, pk=None):
         from rest_framework.response import Response
@@ -135,11 +130,8 @@ class QuizSubmissionViewSet(ModelViewSet):
         submission.save()
         return Response({"status": "published"})
 
-    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated])
-    def pdf(self, request, pk=None):
-        from django.http import HttpResponse
-        from reportlab.pdfgen import canvas
-        from rest_framework.response import Response
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated], url_path='result/pdf')
+    def result_pdf(self, request, pk=None):
     
         try:
             sub = QuizSubmission.objects.get(pk=pk)
@@ -147,16 +139,8 @@ class QuizSubmissionViewSet(ModelViewSet):
             return Response({"detail": "Not found"}, status=404)
         
         role = getattr(request.user, 'profile', None) and request.user.profile.role
-        
-        if not sub.published and role not in ["instructor", "admin"]:
+        student_profile = getattr(request.user, 'profile', None)
+        if not sub.published and role not in ["instructor", "admin"] and sub.student != student_profile:
             return Response({"detail": "Not available"}, status=403)
-        
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="submission_{sub.id}.pdf"'
-        p = canvas.Canvas(response)
-        p.drawString(100, 800, f"Quiz: {sub.quiz.title}")
-        p.drawString(100, 780, f"Student: {sub.student.user.username}")
-        p.drawString(100, 760, f"Score: {sub.score}")
-        p.showPage()
-        p.save()
-        return response
+
+        return generate_quiz_result_pdf(sub)

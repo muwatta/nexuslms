@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from api.models import Assignment, AssignmentSubmission, Course
+from api.pdf_utils import generate_assignment_pdf
 from api.serializers import (
     AssignmentSerializer,
     AssignmentSubmissionSerializer,
@@ -33,6 +34,11 @@ class AssignmentViewSet(ModelViewSet):
             profile = enroll.student
             writer.writerow([profile.user.username, profile.id, profile.user.get_full_name() or profile.user.username, ""])
         return response
+
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated], url_path='pdf')
+    def assignment_pdf(self, request, pk=None):
+        assignment = self.get_object()
+        return generate_assignment_pdf(assignment)
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def upload_results(self, request, pk=None):
