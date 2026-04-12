@@ -1,5 +1,7 @@
 // frontend/src/App.tsx
 import React, { Suspense } from "react";
+import ParentDashboard from "./pages/ParentDashboard";
+
 import {
   BrowserRouter,
   Routes,
@@ -62,7 +64,7 @@ import AIChat from "./components/AIChat";
 import Notifications from "./components/Notifications";
 import { getDashboardRouteByRole, getUserData } from "./utils/authUtils";
 
-// ─── Error Boundary ───────────────────────────────────────────────────────────
+
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode; fallback?: React.ReactNode },
   { hasError: boolean; error?: Error }
@@ -130,7 +132,6 @@ const HomeRouter: React.FC = () => {
   return <Landing />;
 };
 
-// ─── Generic Dashboard Router ─────────────────────────────────────────────────
 const DashboardRouter: React.FC = () => {
   const userData = getUserData();
   if (userData?.role) {
@@ -196,6 +197,7 @@ const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
               <Route path="/contact" element={<Contact />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/practice" element={<PracticeQuestions />} />
+              <Route path="/parent-dashboard" element={<ParentDashboard />} />
 
               {/* ── Generic dashboard ───────────────────────────────── */}
               <Route
