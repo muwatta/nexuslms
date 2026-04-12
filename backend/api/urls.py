@@ -5,6 +5,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
 from .views import ai_proxy
+from .views.parent_views import ParentDashboardViewSet
+
 
 from . import views as auth_view_module
 from .views import (
@@ -51,6 +53,8 @@ router.register("instructor/profiles",    InstructorProfileViewSet,           ba
 router.register("instructor/assignments", InstructorAssignmentViewSet,        basename="instructor-assignments")
 router.register("instructor/students",    InstructorStudentManagementViewSet, basename="instructor-students")
 router.register("instructor/results",     InstructorResultsViewSet,           basename="instructor-results")
+router.register("parent", ParentDashboardViewSet, basename="parent")
+
 
 
 # ─── CLASS-BASED VIEWS ────────────────────────────────────────────────────────
@@ -67,11 +71,7 @@ class ClassChoicesByDepartmentView(APIView):
 
 
 urlpatterns = [
-    # =================================================================
     # NEW SECURE AUTHENTICATION ENDPOINTS (RECOMMENDED - COOKIE-BASED)
-    # =================================================================
-    # These endpoints use HttpOnly cookies instead of returning tokens in body
-    # More secure against XSS attacks
     path("auth/login/",   auth_view_module.auth_views.secure_login,   name="secure-login"),
     path("auth/refresh/", auth_view_module.auth_views.secure_refresh, name="secure-refresh"),
     path("auth/logout/",  auth_view_module.auth_views.secure_logout,  name="secure-logout"),
