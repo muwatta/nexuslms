@@ -2,8 +2,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "/api", 
-  withCredentials: true, 
+  baseURL: import.meta.env.VITE_API_URL?.trim() || "/api",
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -54,7 +54,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await axios.post("/api/auth/refresh/", {}, { withCredentials: true });
+        await api.post("/auth/refresh/", {}, { withCredentials: true });
         processQueue(null);
         return api(originalRequest);
       } catch (refreshError) {
