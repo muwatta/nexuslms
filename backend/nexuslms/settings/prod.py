@@ -9,9 +9,7 @@ ALLOWED_HOSTS = [
     # 'api.yourdomain.com',  # Uncomment if using subdomain
 ]
 
-# =============================================================================
-# SECURITY - HTTPS ONLY
-# =============================================================================
+
 
 # Force HTTPS
 SECURE_SSL_REDIRECT = True
@@ -33,18 +31,13 @@ SIMPLE_JWT['AUTH_COOKIE_SECURE'] = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 
-# =============================================================================
-# CORS - PRODUCTION DOMAINS ONLY
-# =============================================================================
 
 CORS_ALLOWED_ORIGINS = [
     # "https://yourdomain.com",
     # "https://app.yourdomain.com",
 ]
 
-# =============================================================================
-# EMAIL - PRODUCTION SMTP
-# =============================================================================
+
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # Configure these in your .env file:
@@ -55,9 +48,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_HOST_PASSWORD=your-app-password
 # DEFAULT_FROM_EMAIL=noreply@muwata.com
 
-# =============================================================================
-# LOGGING - PRODUCTION
-# =============================================================================
 
 LOGGING = {
     'version': 1,
