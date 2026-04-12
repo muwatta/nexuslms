@@ -2,11 +2,14 @@ from .base import *
 
 DEBUG = False
 
-# CRITICAL: Update with your actual production domain
+# CRITICAL: Use your production domain(s) here or via environment.
 ALLOWED_HOSTS = [
-    'yourdomain.com',
-    'www.yourdomain.com',
-    # 'api.yourdomain.com',  # Uncomment if using subdomain
+    host.strip()
+    for host in os.getenv(
+        "ALLOWED_HOSTS",
+        "yourdomain.com,www.yourdomain.com",
+    ).split(",")
+    if host.strip()
 ]
 
 
@@ -33,8 +36,12 @@ SECURE_BROWSER_XSS_FILTER = True
 
 
 CORS_ALLOWED_ORIGINS = [
-    # "https://yourdomain.com",
-    # "https://app.yourdomain.com",
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "https://yourdomain.com,https://app.yourdomain.com",
+    ).split(",")
+    if origin.strip()
 ]
 
 
