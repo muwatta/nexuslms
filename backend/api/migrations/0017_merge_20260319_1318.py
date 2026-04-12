@@ -7,7 +7,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('api', '0015_profile_class_section_alter_profile_stream_and_more'),
-        ('api', '0016_fix_model_ordering'),
     ]
 
     operations = [
