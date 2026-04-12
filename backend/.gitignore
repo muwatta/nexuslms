@@ -1,0 +1,107 @@
+# -----------------------------
+# Python / Django
+# -----------------------------
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+.Python
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Django specific
+db.sqlite3
+*.sqlite3
+*.sqlite3-journal
+media/
+staticfiles/
+static/
+*.log
+local_settings.py
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# -----------------------------
+# Frontend (React / Vite / Node)
+# -----------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+dist-ssr/
+*.local
+.DS_Store
+
+# Vercel (build output)
+.vercel/
+frontend/.vercel/
+
+# -----------------------------
+# IDEs / Editors
+# -----------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# -----------------------------
+# OS generated files
+# -----------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.bak
+*.orig
+*.tmp
+
+# -----------------------------
+# Project specific
+# -----------------------------
+# Backups / data dumps
+datadump.json
+backup_*.json
+db_backup.sqlite3
+
+# Temporary scripts (keep only permanent ones)
+seed_*.py
+setup_demo.py
+create_parents.py
+add_more_content.py
+test_*.py
+
+# Docker (optional – exclude large logs)
+*.pid
+docker-compose.override.yml
+
+# Logs
+logs/
+*.log
