@@ -2,7 +2,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.timesince import timesince
-from api.models import ChatMessage
+from backend.api.core.models import ChatMessage
 
 
 @admin.register(ChatMessage)

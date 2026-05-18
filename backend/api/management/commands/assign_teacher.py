@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from django.contrib.auth import get_user_model
-        from api.models import SubjectAssignment, Profile
+        from backend.api.core.models import SubjectAssignment, Profile
         User = get_user_model()
 
         username = options["teacher"]

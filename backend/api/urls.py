@@ -23,9 +23,9 @@ from .views import (
     StudentEnrollmentViewSet, StudentChatView, AnnouncementListView,
 )
 from .views.permissions_view import PermissionsMeView 
-from .models import Profile
+from .core.models import Profile
 
-from api.views import ResultViewSet, ReportCardViewSet
+from .views import ResultViewSet, ReportCardViewSet
 
 
 router = DefaultRouter()

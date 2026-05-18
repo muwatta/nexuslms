@@ -22,7 +22,7 @@ class Command(BaseCommand):
         parser.add_argument("--skip-enroll",   action="store_true", help="Skip re-enrollment step")
 
     def handle(self, *args, **options):
-        from api.models import Profile, Course, Enrollment
+        from backend.api.core.models import Profile, Course, Enrollment
 
         dry     = options["dry_run"]
         prefix  = "[DRY RUN] " if dry else ""

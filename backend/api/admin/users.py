@@ -5,7 +5,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.utils.html import format_html
-from api.models import Profile
+from backend.api.core.models import Profile
 from api.signals import sync_role_to_groups
 
 User = get_user_model()

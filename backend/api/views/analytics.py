@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from django.db.models import Avg, Count
-from api.models import Course, Enrollment, QuizSubmission
+from backend.api.core.models import Course, Enrollment, QuizSubmission
 
 
 @api_view(["GET"])

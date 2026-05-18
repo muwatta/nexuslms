@@ -15,7 +15,7 @@ def _current_academic_year() -> str:
     if now.month >= 9:
         return f"{now.year}/{now.year + 1}"
     return f"{now.year - 1}/{now.year}"
-
+ 
 
 def _current_term() -> str:
     """
@@ -38,7 +38,7 @@ def _auto_enroll_student(profile):
     (department, student_class) for the current academic_year + term.
     Returns (created_count, skipped_count).
     """
-    from api.models import Course, Enrollment
+    from backend.api.core.models import Course, Enrollment
 
     student_class = getattr(profile, "student_class", None)
     department    = getattr(profile, "department",    None)
@@ -78,7 +78,7 @@ def _unenroll_old_class(profile, old_class):
     Drop active enrollments from old-class courses — only if no assignment
     submissions exist for that course (prevents data loss).
     """
-    from api.models import Course, Enrollment
+    from backend.api.core.models import Course, Enrollment
 
     department = getattr(profile, "department", None)
     if not department or not old_class:
@@ -154,7 +154,7 @@ def _auto_assign_subjects(profile):
     in their department who teach that class.  Only creates assignments
     that don't already exist (safe to call multiple times).
     """
-    from api.models.subjectassignment import SubjectAssignment
+    from backend.api.core.models.subjectassignment import SubjectAssignment
     from django.contrib.auth import get_user_model
     User = get_user_model()
 
@@ -173,7 +173,7 @@ def _auto_assign_subjects(profile):
         return
 
     # Get all subjects that have courses for this class
-    from api.models import Course
+    from backend.api.core.models import Course
     subjects = list(
         Course.objects.filter(
             department=department,

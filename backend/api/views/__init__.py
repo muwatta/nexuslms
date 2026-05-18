@@ -51,7 +51,7 @@ from .student_views import (
     AnnouncementListView,
 )
 # Result views  ← NEW
-from .result_views import ResultViewSet, ReportCardViewSet
+from api.academics.views.result_views import ResultViewSet, ReportCardViewSet
 
 __all__ = [
     # Auth

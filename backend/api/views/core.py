@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework import status
 from rest_framework.views import APIView
 
-from api.models import Profile
+from backend.api.core.models import Profile
 from api.serializers import ProfileSerializer
 from api.serializers.user import UserRegistrationSerializer
 

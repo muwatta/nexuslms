@@ -37,7 +37,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        from api.models import Profile, Course, Enrollment
+        from backend.api.core.models import Profile, Course, Enrollment
         from django.utils import timezone
 
         def _academic_year():

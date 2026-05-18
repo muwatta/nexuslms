@@ -3,7 +3,7 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-from api.models import Course, PracticeQuestion
+from backend.api.core.models import Course, PracticeQuestion
 from api.serializers import CourseSerializer, PracticeQuestionSerializer
 from api.permissions import IsAdminOrInstructor
 from api.filters import CourseFilter

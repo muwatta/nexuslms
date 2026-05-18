@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Q
 
-from api.models import Profile, AuditLog
+from backend.api.core.models import Profile, AuditLog
 from api.permissions import IsAdmin
 from .. import signals as signals_module
 
