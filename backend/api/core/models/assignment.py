@@ -1,5 +1,5 @@
 from django.db import models
-from api.models import Course
+from backend.api.core.models import Course
 
 class Assignment(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="assignments")

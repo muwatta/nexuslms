@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from api.models import Course, Enrollment, PracticeQuestion
+from backend.api.core.models import Course, Enrollment, PracticeQuestion
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -30,7 +30,7 @@ class CourseSerializer(serializers.ModelSerializer):
         """Return readable class name or default"""
         if obj.student_class:
             # Try to get display name from Profile choices
-            from api.models import Profile
+            from backend.api.core.models import Profile
             classes = Profile.get_classes_for_department(obj.department)
             class_dict = dict(classes)
             return class_dict.get(obj.student_class, obj.student_class)
@@ -68,7 +68,7 @@ class CourseCreateUpdateSerializer(serializers.ModelSerializer):
         """Cross-field validation"""
         # Ensure student_class is valid for department
         if data.get('student_class') and data.get('department'):
-            from api.models import Profile
+            from backend.api.core.models import Profile
             valid_classes = [c[0] for c in Profile.get_classes_for_department(data['department'])]
             if data['student_class'] not in valid_classes:
                 raise serializers.ValidationError({

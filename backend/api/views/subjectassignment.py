@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from api.permissions import IsAdmin, ADMIN_ROLES
-from api.models.subjectassignment import SubjectAssignment
+from backend.api.core.models.subjectassignment import SubjectAssignment
 from api.serializers.profile import SubjectAssignmentSerializer
 
 

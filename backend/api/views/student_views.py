@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
-from api.models import Profile, Course, Enrollment
+from backend.api.core.models import Profile, Course, Enrollment
 from api.serializers import EnrollmentSerializer
 
 User = get_user_model()
@@ -46,7 +46,7 @@ class StudentDashboardView(APIView):
         # Assignments from enrolled courses
         assignments = []
         try:
-            from api.models import Assignment
+            from backend.api.core.models import Assignment
             enrolled_course_ids = enrollments.filter(
                 status="active"
             ).values_list("course_id", flat=True)
@@ -69,7 +69,7 @@ class StudentDashboardView(APIView):
         # Fee status
         fee_status = None
         try:
-            from api.models import FeePayment
+            from backend.api.core.models import FeePayment
             fee = FeePayment.objects.filter(student=profile).order_by("-created_at").first()
             if fee:
                 fee_status = {
@@ -126,7 +126,7 @@ class StudentDashboardView(APIView):
         # Unread messages
         unread = 0
         try:
-            from api.models import Message
+            from backend.api.core.models import Message
             unread = Message.objects.filter(
                 recipient=request.user, is_read=False
             ).count()
@@ -321,7 +321,7 @@ class AnnouncementListView(APIView):
 
         announcements = []
         try:
-            from api.models import Assignment
+            from backend.api.core.models import Assignment
             enrolled_ids = Enrollment.objects.filter(
                 student=profile, status="active"
             ).values_list("course_id", flat=True)
@@ -358,7 +358,7 @@ class StudentChatView(APIView):
     def get(self, request):
         with_id = request.query_params.get("with")
         try:
-            from api.models import Message
+            from backend.api.core.models import Message
         except ImportError:
             return Response([])
 
@@ -437,7 +437,7 @@ class StudentChatView(APIView):
 
     def post(self, request):
         try:
-            from api.models import Message
+            from backend.api.core.models import Message
         except ImportError:
             return Response({"detail": "Messaging not available."}, status=501)
 

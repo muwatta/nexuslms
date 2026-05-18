@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from api.models import FeePayment
+from backend.api.core.models import FeePayment
 
 
 class PaymentSerializer(serializers.ModelSerializer):

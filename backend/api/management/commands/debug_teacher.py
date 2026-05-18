@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from django.contrib.auth import get_user_model
-        from api.models.subjectassignment import SubjectAssignment
+        from backend.api.core.models.subjectassignment import SubjectAssignment
 
         User = get_user_model()
 

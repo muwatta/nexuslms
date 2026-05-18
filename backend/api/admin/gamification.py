@@ -1,5 +1,5 @@
 from django.contrib import admin
-from api.models import Achievement, Project, Milestone
+from backend.api.core.models import Achievement, Project, Milestone
 
 
 @admin.register(Achievement)

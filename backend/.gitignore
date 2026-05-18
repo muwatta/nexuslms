@@ -57,21 +57,18 @@ dist-ssr/
 .vercel/
 frontend/.vercel/
 
-# -----------------------------
-# IDEs / Editors
-# -----------------------------
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.project
+.project 
 .classpath
 .settings/
 
-# -----------------------------
+
 # OS generated files
-# -----------------------------
+
 .DS_Store
 .DS_Store?
 ._*

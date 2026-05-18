@@ -1,142 +1,19 @@
-# backend/api/views/result_views.py
-
-from rest_framework import viewsets, serializers, status
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
 from django.db import transaction
 from django.db.models import Avg, Count, Q
 from django.utils import timezone
 
-from api.models import Profile, Course, Result, ReportCard, Enrollment
-from api.permissions import IsTeacher, IsAdmin
+from api.models import Profile, Course, Result, ReportCard
+from api.academics.serializers.result import (
+    ResultSerializer,
+    ResultWriteSerializer,
+    BulkResultSerializer,
+)
+from api.academics.serializers.report_card import ReportCardSerializer
 
-
-# ── Serializers
-
-class ResultSerializer(serializers.ModelSerializer):
-    student_name  = serializers.SerializerMethodField()
-    course_title  = serializers.SerializerMethodField()
-    entered_by_name = serializers.SerializerMethodField()
-    ca_total      = serializers.FloatField(read_only=True)
-
-    class Meta:
-        model  = Result
-        fields = [
-            "id", "student", "student_name", "course", "course_title",
-            "term", "academic_year", "student_class",
-            "test1", "test2", "assignment", "midterm", "exam",
-            "ca_total", "total", "grade", "position", "remark",
-            "status", "entered_by", "entered_by_name",
-            "submitted_at", "reviewed_at", "published_at",
-            "created_at", "updated_at",
-        ]
-        read_only_fields = [
-            "total", "grade", "ca_total", "position",
-            "submitted_at", "reviewed_at", "published_at",
-            "created_at", "updated_at",
-        ]
-
-    def get_student_name(self, obj):
-        u = obj.student.user
-        return f"{u.first_name} {u.last_name}".strip() or u.username
-
-    def get_course_title(self, obj):
-        return obj.course.title
-
-    def get_entered_by_name(self, obj):
-        if not obj.entered_by:
-            return None
-        u = obj.entered_by.user
-        return f"{u.first_name} {u.last_name}".strip() or u.username
-
-
-class ResultWriteSerializer(serializers.ModelSerializer):
-    """Used for creating/updating results (teacher entry)."""
-
-    class Meta:
-        model  = Result
-        fields = [
-            "student", "course", "term", "academic_year",
-            "test1", "test2", "assignment", "midterm", "exam",
-            "remark",
-        ]
-
-    def validate(self, data):
-        # Validate score ranges
-        errors = {}
-        for field, max_val in [
-            ("test1", 10), ("test2", 10),
-            ("assignment", 10), ("midterm", 10), ("exam", 60),
-        ]:
-            val = data.get(field, 0)
-            if val < 0 or val > max_val:
-                errors[field] = f"Must be between 0 and {max_val}."
-        if errors:
-            raise serializers.ValidationError(errors)
-        return data
-
-
-class BulkResultSerializer(serializers.Serializer):
-    """For bulk entry — list of result records for a course/term."""
-    course        = serializers.IntegerField()
-    term          = serializers.CharField()
-    academic_year = serializers.CharField()
-    results       = serializers.ListField(
-        child=serializers.DictField(),
-        min_length=1,
-    )
-
-
-class ReportCardSerializer(serializers.ModelSerializer):
-    student_name  = serializers.SerializerMethodField()
-    results       = serializers.SerializerMethodField()
-
-    class Meta:
-        model  = ReportCard
-        fields = [
-            "id", "student", "student_name",
-            "term", "academic_year", "student_class",
-            "total_subjects", "total_score", "average_score",
-            "position_in_class", "class_size",
-            "days_present", "days_absent", "total_days",
-            "class_teacher_remark", "principal_remark", "resumption_date",
-            "is_published", "generated_at", "published_at",
-            "results",
-        ]
-
-    def get_student_name(self, obj):
-        u = obj.student.user
-        return f"{u.first_name} {u.last_name}".strip() or u.username
-
-    def get_results(self, obj):
-        """Embed all published results for this report card's term."""
-        results = Result.objects.filter(
-            student=obj.student,
-            term=obj.term,
-            academic_year=obj.academic_year,
-            status="published",
-        ).select_related("course")
-        return [
-            {
-                "course":   r.course.title,
-                "test1":    r.test1,
-                "test2":    r.test2,
-                "assignment": r.assignment,
-                "midterm":  r.midterm,
-                "exam":     r.exam,
-                "ca_total": r.ca_total,
-                "total":    r.total,
-                "grade":    r.grade,
-                "position": r.position,
-                "remark":   r.remark,
-            }
-            for r in results
-        ]
-
-
-# ── Result ViewSet ────────────────────────────────────────────────────────────
 
 class ResultViewSet(viewsets.ModelViewSet):
     """
@@ -167,18 +44,14 @@ class ResultViewSet(viewsets.ModelViewSet):
         elif role == "teacher":
             teacher_type = getattr(profile, "teacher_type", None)
             if teacher_type == "class":
-                # Class teacher sees all results for their class
                 qs = Result.objects.filter(
                     student_class=profile.student_class or "",
                 )
             else:
-                # Subject teacher sees only results they entered
                 qs = Result.objects.filter(entered_by=profile)
         elif role == "student":
             qs = Result.objects.filter(student=profile, status="published")
         elif role == "parent":
-            # Parent sees their child's published results
-            # Link via parent_email matching student's parent_email
             children = Profile.objects.filter(
                 role="student",
                 parent_email=user.email,
@@ -187,7 +60,6 @@ class ResultViewSet(viewsets.ModelViewSet):
         else:
             return Result.objects.none()
 
-        # Optional filters
         params = self.request.query_params
         if params.get("term"):
             qs = qs.filter(term=params["term"])
@@ -216,14 +88,11 @@ class ResultViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         instance = serializer.instance
-        # Only allow edits while in draft
         if instance.status not in ("draft",):
             raise serializers.ValidationError(
                 "Cannot edit a result that has already been submitted."
             )
         serializer.save()
-
-    # ── Submit (teacher → class teacher) ─────────────────────────────────────
 
     @action(detail=True, methods=["post"])
     def submit(self, request, pk=None):
@@ -244,8 +113,6 @@ class ResultViewSet(viewsets.ModelViewSet):
         result.submitted_at = timezone.now()
         result.save()
         return Response({"detail": "Result submitted for review.", "status": "submitted"})
-
-    # ── Review (class teacher) ────────────────────────────────────────────────
 
     @action(detail=True, methods=["post"])
     def review(self, request, pk=None):
@@ -268,8 +135,6 @@ class ResultViewSet(viewsets.ModelViewSet):
         result.save()
         return Response({"detail": "Result reviewed.", "status": "reviewed"})
 
-    # ── Publish (admin) ───────────────────────────────────────────────────────
-
     @action(detail=True, methods=["post"])
     def publish(self, request, pk=None):
         result  = self.get_object()
@@ -291,11 +156,8 @@ class ResultViewSet(viewsets.ModelViewSet):
         result.save()
         return Response({"detail": "Result published.", "status": "published"})
 
-    # ── Class results (class teacher overview) ────────────────────────────────
-
     @action(detail=False, methods=["get"])
     def class_results(self, request):
-        """All results for a given class/term/year."""
         student_class = request.query_params.get("student_class")
         term          = request.query_params.get("term")
         academic_year = request.query_params.get("academic_year")
@@ -315,24 +177,8 @@ class ResultViewSet(viewsets.ModelViewSet):
         serializer = ResultSerializer(results, many=True)
         return Response(serializer.data)
 
-    # ── Bulk entry ────────────────────────────────────────────────────────────
-
     @action(detail=False, methods=["post"])
     def bulk_entry(self, request):
-        """
-        Teacher enters results for all students in a course at once.
-        POST body:
-        {
-            "course": 5,
-            "term": "First Term",
-            "academic_year": "2025/2026",
-            "results": [
-                {"student": 12, "test1": 8, "test2": 7, "assignment": 9,
-                 "midterm": 8, "exam": 52},
-                ...
-            ]
-        }
-        """
         serializer = BulkResultSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -392,15 +238,8 @@ class ResultViewSet(viewsets.ModelViewSet):
             "errors":  errors,
         })
 
-    # ── Compute positions ─────────────────────────────────────────────────────
-
     @action(detail=False, methods=["post"])
     def compute_positions(self, request):
-        """
-        Admin triggers position computation for a class/term/year.
-        Positions are computed per subject (position in subject)
-        and stored on each Result.
-        """
         profile = getattr(request.user, "profile", None)
         if profile.role not in ("admin", "super_admin", "school_admin"):
             return Response(
@@ -418,7 +257,6 @@ class ResultViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Get all courses for this class
         courses = Course.objects.filter(student_class=student_class)
         updated = 0
 
@@ -443,8 +281,6 @@ class ResultViewSet(viewsets.ModelViewSet):
             "academic_year": academic_year,
         })
 
-
-# ── ReportCard ViewSet ────────────────────────────────────────────────────────
 
 class ReportCardViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -492,10 +328,6 @@ class ReportCardViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["post"])
     def generate(self, request):
-        """
-        Admin generates/regenerates report cards for a class/term/year.
-        Computes: total_score, average, position_in_class from published results.
-        """
         profile = getattr(request.user, "profile", None)
         if profile.role not in ("admin", "super_admin", "school_admin"):
             return Response(
@@ -514,7 +346,6 @@ class ReportCardViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Get all students in this class with published results
         students = Profile.objects.filter(
             role="student",
             student_class=student_class,
@@ -523,7 +354,6 @@ class ReportCardViewSet(viewsets.ReadOnlyModelViewSet):
         generated = []
 
         with transaction.atomic():
-            # Compute each student's total + average
             student_scores = []
             for student in students:
                 results = Result.objects.filter(
@@ -546,7 +376,6 @@ class ReportCardViewSet(viewsets.ReadOnlyModelViewSet):
                     "average_score":  average_score,
                 })
 
-            # Sort by total_score descending to compute positions
             student_scores.sort(key=lambda x: x["total_score"], reverse=True)
             class_size = len(student_scores)
 
@@ -576,7 +405,6 @@ class ReportCardViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["post"])
     def publish(self, request, pk=None):
-        """Admin publishes a report card — student can now see it."""
         profile = getattr(request.user, "profile", None)
         if profile.role not in ("admin", "super_admin", "school_admin"):
             return Response(
@@ -589,7 +417,6 @@ class ReportCardViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["post"])
     def publish_all(self, request):
-        """Admin publishes ALL report cards for a class/term/year at once."""
         profile = getattr(request.user, "profile", None)
         if profile.role not in ("admin", "super_admin", "school_admin"):
             return Response(

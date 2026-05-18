@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html, mark_safe
 from django.db.models import Avg, Count
-from api.models import (
+from backend.api.core.models import (
     Quiz,
     Question,
     QuizSubmission,
@@ -9,7 +9,7 @@ from api.models import (
 
 # ── Try importing Assignment models (may not exist yet) ───────────────────────
 try:
-    from api.models import Assignment, AssignmentSubmission
+    from backend.api.core.models import Assignment, AssignmentSubmission
     HAS_ASSIGNMENTS = True
 except ImportError:
     HAS_ASSIGNMENTS = False

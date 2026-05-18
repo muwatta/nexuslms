@@ -1,7 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 
-from api.models import Achievement, Project, Milestone
+from backend.api.core.models import Achievement, Project, Milestone
 from api.serializers.achievement import (
     AchievementSerializer,
     ProjectSerializer,

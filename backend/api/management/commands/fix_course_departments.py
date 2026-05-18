@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from api.models import Course, Profile
+from backend.api.core.models import Course, Profile
 
 class Command(BaseCommand):
     help = 'Update course departments based on instructor assignments'

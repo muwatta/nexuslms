@@ -18,7 +18,7 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
 
         # Import here to avoid AppRegistryNotReady
-        from api.models import Profile
+        from backend.api.core.models import Profile
 
         profiles = Profile.objects.filter(role="instructor")
         count = profiles.count()

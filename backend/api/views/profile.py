@@ -7,7 +7,7 @@ from rest_framework.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 
-from api.models import Profile, Enrollment, InstructorAssignment, AuditLog
+from backend.api.core.models import Profile, Enrollment, InstructorAssignment, AuditLog
 from api.serializers.profile import (
     ProfileSerializer, ProfileCreateUpdateSerializer,
     InstructorAssignmentSerializer, EnrollmentSerializer,
@@ -153,7 +153,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         current_enrollment = Enrollment.objects.filter(student=profile, status="active").first()
         if not current_enrollment:
             return Response({"error": "No active enrollment found"}, status=status.HTTP_400_BAD_REQUEST)
-        from api.models import Course
+        from backend.api.core.models import Course
         try:
             next_course = Course.objects.get(id=serializer.validated_data["next_course_id"])
         except Course.DoesNotExist:

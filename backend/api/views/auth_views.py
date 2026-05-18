@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken as BaseRefreshToken, TokenError
 
-from ..models import PasswordResetOTP
+from ..core.models import PasswordResetOTP
 
 User = get_user_model()
 logger = logging.getLogger(__name__)

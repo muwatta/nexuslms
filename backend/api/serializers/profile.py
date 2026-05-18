@@ -2,8 +2,8 @@
 
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from api.models import Profile, Enrollment, AuditLog
-from api.models.subjectassignment import SubjectAssignment
+from backend.api.core.models import Profile, Enrollment, AuditLog
+from backend.api.core.models.subjectassignment import SubjectAssignment
 
 User = get_user_model()
 
@@ -219,7 +219,7 @@ class PromoteStudentSerializer(serializers.Serializer):
 
 
 try:
-    from api.models import InstructorAssignment
+    from backend.api.core.models import InstructorAssignment
 
     class InstructorAssignmentSerializer(serializers.ModelSerializer):
         instructor_name  = serializers.CharField(source="instructor.user.username", read_only=True)
