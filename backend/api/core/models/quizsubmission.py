@@ -1,6 +1,6 @@
 from django.db import models
-from backend.api.core.models import Quiz
-from backend.api.core.models import Profile
+from api.core.models import Quiz
+from api.core.models import Profile
 from django.utils import timezone
 
 class QuizSubmission(models.Model):

@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.utils import timezone
 
-from backend.api.core.models import Quiz, QuizSubmission, Question, Course
+from api.core.models import Quiz, QuizSubmission, Question, Course
 from api.pdf_utils import generate_quiz_result_pdf
 from api.serializers import QuizSerializer, QuizSubmissionSerializer, QuestionSerializer
 from api.filters import QuizFilter

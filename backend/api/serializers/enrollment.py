@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from backend.api.core.models import Enrollment
+from api.core.models import Enrollment
 
 class EnrollmentSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.user.username', read_only=True)

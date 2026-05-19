@@ -14,7 +14,7 @@ class Command(BaseCommand):
         parser.add_argument("--publish", action="store_true", help="Also publish all results")
 
     def handle(self, *args, **options):
-        from backend.api.core.models import Result, ReportCard, Profile, Course
+        from api.core.models import Result, ReportCard, Profile, Course
 
         student_class = options["student_class"]
         term          = options["term"]

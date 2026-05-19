@@ -7,7 +7,7 @@ class Command(BaseCommand):
     help = "Show current student class distribution — run before migrating"
 
     def handle(self, *args, **options):
-        from backend.api.core.models import Profile, Course, Enrollment
+        from api.core.models import Profile, Course, Enrollment
 
         self.stdout.write("\n=== STUDENTS ===")
         students = Profile.objects.filter(role="student").order_by("department", "student_class")

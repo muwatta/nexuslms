@@ -1,5 +1,5 @@
 from django.db import models
-from backend.api.core.models import Profile, Course
+from api.core.models import Profile, Course
 from django.utils import timezone
 
 

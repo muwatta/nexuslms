@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from backend.api.core.models import Assignment, AssignmentSubmission
+from api.core.models import Assignment, AssignmentSubmission
 
 
 class AssignmentSerializer(serializers.ModelSerializer):

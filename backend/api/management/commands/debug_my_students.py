@@ -12,8 +12,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from django.contrib.auth import get_user_model
-        from backend.api.core.models.subjectassignment import SubjectAssignment
-        from backend.api.core.models import Course
+        from api.core.models.subjectassignment import SubjectAssignment
+        from api.core.models import Course
 
         User = get_user_model()
         try:
