@@ -357,8 +357,8 @@ class StudentChatView(APIView):
 
     def get(self, request):
         with_id = request.query_params.get("with")
-            try:
-                from api.core.models import Message
+        try:
+            from api.core.models import Message
         except ImportError:
             return Response([])
 
