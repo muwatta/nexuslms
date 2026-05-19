@@ -1,4 +1,4 @@
-from backend.api.core.models import User
+from api.core.models import User
 
 def get_parent_child(parent_user):
     return User.objects.filter(

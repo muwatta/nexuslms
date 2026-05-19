@@ -7,7 +7,7 @@ class Command(BaseCommand):
     help = "Debug assignment creation — shows exact validation errors"
 
     def handle(self, *args, **options):
-        from backend.api.core.models import Profile, Course
+        from api.core.models import Profile, Course
         from api.serializers import AssignmentSerializer
         from django.contrib.auth import get_user_model
         User = get_user_model()

@@ -29,7 +29,7 @@ class Command(BaseCommand):
         parser.add_argument("--dry-run", action="store_true")
 
     def handle(self, *args, **options):
-        from backend.api.core.models import Profile
+        from api.core.models import Profile
 
         dry_run = options["dry_run"]
         prefix  = "[DRY RUN] " if dry_run else ""

@@ -2,7 +2,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 
-from backend.api.core.models import FeePayment, Profile
+from api.core.models import FeePayment, Profile
 from api.serializers import PaymentSerializer
 from api.paystack_client import initialize_transaction, verify_transaction
 

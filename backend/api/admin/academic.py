@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html, mark_safe
-from backend.api.core.models import Course, Enrollment
+from api.core.models import Course, Enrollment
 
 
 @admin.register(Course)

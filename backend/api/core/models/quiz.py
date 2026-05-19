@@ -1,5 +1,5 @@
 from django.db import models
-from backend.api.core.models import Course
+from api.core.models import Course
 from django.utils import timezone
 
 class Quiz(models.Model):

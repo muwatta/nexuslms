@@ -1,6 +1,5 @@
 from django.db import models
-from backend.api.core.models import Course
-
+from .course import Course
 class Assignment(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="assignments")
     title = models.CharField(max_length=255)

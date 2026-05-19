@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from backend.api.core.models import Achievement, Project, Milestone
+from api.core.models import Achievement, Project, Milestone
 
 
 class AchievementSerializer(serializers.ModelSerializer):

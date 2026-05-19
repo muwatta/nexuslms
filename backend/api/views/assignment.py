@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from backend.api.core.models import Assignment, AssignmentSubmission, Course
+from api.core.models import Assignment, AssignmentSubmission, Course
 from api.pdf_utils import generate_assignment_pdf
 from api.serializers import (
     AssignmentSerializer,
@@ -86,7 +86,7 @@ class AssignmentViewSet(ModelViewSet):
             profile = None
             if sid:
                 try:
-                    from backend.api.core.models import Profile
+                    from api.core.models import Profile
                     profile = Profile.objects.filter(id=int(sid)).first()
                 except Exception:
                     profile = None
@@ -95,7 +95,7 @@ class AssignmentViewSet(ModelViewSet):
                 User = get_user_model()
                 u = User.objects.filter(username=username).first()
                 if u:
-                    from backend.api.core.models import Profile
+                    from api.core.models import Profile
                     profile = Profile.objects.filter(user=u).first()
             if not profile:
                 errors.append({"row": i, "error": "student not found"})

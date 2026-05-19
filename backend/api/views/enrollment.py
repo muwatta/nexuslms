@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions, serializers
 from rest_framework.exceptions import ValidationError
-from backend.api.core.models import Enrollment, Profile
+from api.core.models import Enrollment, Profile
 from api.serializers import EnrollmentSerializer
 
 class IsStudent(permissions.BasePermission):

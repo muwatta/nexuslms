@@ -7,7 +7,7 @@ from . import chat
 from . import results      
 
 from .users import CustomGroupAdmin, CustomUserAdmin
-from backend.api.core.models import User
+from api.core.models import User
 
 try:
     admin.site.unregister(Group)
