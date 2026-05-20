@@ -1,6 +1,7 @@
 # backend/api/middleware.py
+import asyncio
 import time
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.core.cache import cache
 from django.conf import settings
 
@@ -26,33 +27,36 @@ class RateLimitMiddleware:
         self.limits = self.RATE_LIMITS_DEV if settings.DEBUG else self.RATE_LIMITS_PROD
 
     def __call__(self, request):
-        rate_limit = self.limits.get(request.path)
+        try:
+            rate_limit = self.limits.get(request.path)
 
-        if rate_limit and request.method == 'POST':
-            max_requests, time_window = rate_limit
-            client_ip  = self._get_client_ip(request)
-            cache_key  = f"rate_limit:{request.path}:{client_ip}"
+            if rate_limit and request.method == 'POST':
+                max_requests, time_window = rate_limit
+                client_ip  = self._get_client_ip(request)
+                cache_key  = f"rate_limit:{request.path}:{client_ip}"
 
-            now      = time.time()
-            requests = cache.get(cache_key, [])
+                now      = time.time()
+                requests = cache.get(cache_key, [])
 
-            requests = [t for t in requests if now - t < time_window]
+                requests = [t for t in requests if now - t < time_window]
 
-            if len(requests) >= max_requests:
-                retry_after = int(time_window - (now - requests[0]))
-                return JsonResponse(
-                    {
-                        'error': 'Too many requests. Please try again later.',
-                        'retry_after_seconds': max(retry_after, 1),
-                    },
-                    status=429,
-                    headers={'Retry-After': str(max(retry_after, 1))},
-                )
+                if len(requests) >= max_requests:
+                    retry_after = int(time_window - (now - requests[0]))
+                    return JsonResponse(
+                        {
+                            'error': 'Too many requests. Please try again later.',
+                            'retry_after_seconds': max(retry_after, 1),
+                        },
+                        status=429,
+                        headers={'Retry-After': str(max(retry_after, 1))},
+                    )
 
-            requests.append(now)
-            cache.set(cache_key, requests, time_window)
+                requests.append(now)
+                cache.set(cache_key, requests, time_window)
 
-        return self.get_response(request)
+            return self.get_response(request)
+        except asyncio.CancelledError:
+            return HttpResponse(status=499)
 
     @staticmethod
     def _get_client_ip(request) -> str:
