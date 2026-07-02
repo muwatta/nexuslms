@@ -1,134 +1,110 @@
 # NexusLMS
 
-> A full-stack monorepo Learning Management System — production-ready Django REST backend with JWT auth, role-based permissions across 5 user types, Paystack payments, auto-graded quizzes, PDF reports, and a React/Vite frontend.
+NexusLMS is a full-stack learning management system for managing schools, courses, users, assessments, payments, and reporting. The project combines a Django REST API backend with a React + Vite frontend and includes a dedicated super-admin experience for user and role management.
 
-**Backend: Python 35% · Frontend: TypeScript 65%**
+## Overview
 
----
+The platform currently supports:
 
-## 🟢 Status
+- multi-role access for super admins, school admins, instructors, students, and parents
+- user and profile management from the app UI, not only from Django admin
+- department-based dashboards and school views
+- course enrollment and academic workflows
+- quizzes, assignments, and reporting
+- payment handling with Paystack integration
+- audit logging and role-group synchronization
 
-| Component | Status | Notes |
-|---|---|---|
-| Backend API | ✅ Production-ready | 8/8 integration tests passing |
-| Database Models | ✅ Complete | Users, courses, enrollments, quizzes, payments |
-| API Docs | ✅ Live | OpenAPI/Swagger at `/api/schema/` |
-| Payment Integration | ✅ Integrated | Paystack with webhook verification |
-| Frontend (React/Vite) | 🔄 In Progress | Core pages done, UI refinement ongoing |
-| Deployment | ⏳ Planned | Dockerized, PostgreSQL-ready |
+## Project structure
 
----
-
-## 🏗️ Architecture
-
-```
-├── backend/        # Django REST API
-├── frontend/       # React + Vite SPA
-├── docker/         # Docker Compose setup
-└── docs/           # Permission groups, API contracts
+```text
+backend/        # Django REST API and business logic
+frontend/       # React + TypeScript + Vite client
+docker/         # Docker Compose and deployment assets
+docs/           # Product and API documentation
 ```
 
-**Backend layers:** Models → Serializers → Views → Services → Tests
+## Tech stack
 
-**Key design decisions:**
-- List endpoints filter inaccessible objects (`404`), detail endpoints enforce object permissions (`403`)
-- External services (Paystack, PDF) isolated and mocked in tests for deterministic runs
-- JWT short-lived (15min) with refresh rotation and HttpOnly cookies
+- Backend: Python, Django, Django REST Framework, SimpleJWT
+- Frontend: React, TypeScript, Vite, Tailwind CSS, Framer Motion
+- Database: SQLite for local development, PostgreSQL-ready for production
+- APIs: DRF, DRF Spectacular, CORS support
+- Integrations: Paystack, PDF generation, analytics charts
 
----
+## Current capabilities
 
-## 👥 Role-Based Permission System
+### Admin and user management
 
-| Role | Scope | Key Actions |
-|---|---|---|
-| Super Admin | System-wide | Schools, billing, global config |
-| School Admin | Institution-wide | Instructors, courses, reports |
-| Instructor | Course-wide | Content creation, grading, messaging |
-| Student | Enrollment-only | Learn, submit, track progress |
-| Parent | View-only (child) | Monitor progress, receive reports |
+- super-admin portal with department overview and quick actions
+- user management UI for creating and updating users
+- role-based access and group synchronization
+- audit log visibility for key actions
 
----
+### Learning workflows
 
-## ⚙️ Tech Stack
+- course and enrollment management
+- assessments and quiz flow
+- instructor/student dashboards
+- analytics and reporting surfaces
 
-| Layer | Tech |
-|---|---|
-| Backend | Python, Django, Django REST Framework |
-| Frontend | React, TypeScript, Vite |
-| Database | PostgreSQL (SQLite for local dev) |
-| Auth | JWT (SimpleJWT) + role-based permissions |
-| Payments | Paystack + webhook verification |
-| Async | Celery + RabbitMQ |
-| Caching | Redis |
-| Storage | AWS S3 + CloudFront |
-| Containerization | Docker + Docker Compose |
-| CI/CD | GitHub Actions |
+### Payments and infrastructure
 
----
+- Paystack payment integration
+- Docker-based deployment setup
+- environment-driven configuration for backend services
 
-## ✅ Core Features
+## Prerequisites
 
-- JWT authentication with 5-tier role-based access control
-- Course creation, module ordering, and enrollment workflows
-- Auto-graded quizzes — timed, ordered, duplicate-submission-proof
-- Secure PDF result generation
-- Paystack payment tracking with webhook verification
-- Analytics endpoints for instructors and students
-- OpenAPI/Swagger docs at `/api/schema/`
-- Integration tests covering auth, permissions, assessments, analytics, payments
+- Python 3.11+
+- Node.js 18+
+- npm or yarn
+- (optional) Docker Compose
 
----
-
-## 🚀 Local Development
+## Backend setup
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
 
-**Environment variables:**
+The API will be available at http://localhost:8000.
 
-```env
-SECRET_KEY=your-secret-key
-DEBUG=True
-DATABASE_URL=sqlite:///db.sqlite3
-PAYSTACK_SECRET_KEY=your-paystack-key
-```
-
-**Run tests:**
+## Frontend setup
 
 ```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will be available at http://localhost:5173.
+
+## Useful commands
+
+```bash
+# Backend tests
+cd backend
 python manage.py test
-```
 
-**Run with Docker:**
+# Frontend production build
+cd frontend
+npm run build
 
-```bash
+# Docker compose
+cd docker
 docker compose up --build
 ```
 
----
+## Notes
 
-## 🗺️ Roadmap
+- The frontend and backend are designed to work together as a single product experience.
+- The admin experience has been expanded so many settings can be managed from the UI instead of relying only on Django admin.
+- The project includes both local development tooling and deployment assets for containerized use.
 
-| Phase | Feature |
-|---|---|
-| Now | Frontend assessment workflows, grading dashboard |
-| Next | Containerized deployment, production hosting |
-| V3 | Live classes (WebRTC), mobile PWA |
-| V4 | AI tutor, predictive dropout alerts |
+## Contact
 
----
-
-## 📬 Contact
-
-**Abdullahi Musliudeen**
-[LinkedIn](https://www.linkedin.com/in/abdullahi-musliudeen-64435a239/) · abdullahmusliudeen@gmail.com
-
----
-
-MIT License
+For questions or collaboration, contact the project maintainer through the repository or the contact details in the project history.

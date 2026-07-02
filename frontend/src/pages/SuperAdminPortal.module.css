@@ -1,4 +1,4 @@
-/* ── Header ── */
+/* Header */
 .header {
   position: relative;
   overflow: hidden;
@@ -128,7 +128,7 @@
 }
 .headerRefresh:disabled { opacity: 0.5; }
 
-/* ── Tabs ── */
+/* Tabs */
 .tabsContainer {
   position: sticky;
   top: 0;
@@ -169,14 +169,14 @@
   color: #14b8a6;
 }
 
-/* ── Main content ── */
+/* Main content */
 .mainContent {
   max-width: 72rem;
   margin: 0 auto;
   padding: 2rem 1rem;
 }
 
-/* ── Error banner ── */
+/* Error banner */
 .errorBanner {
   margin-bottom: 1.5rem;
   padding: 0.75rem 1rem;
@@ -199,7 +199,7 @@
 }
 .errorClose:hover { opacity: 1; }
 
-/* ── Stat cards ── */
+/* Stat cards */
 .statTotal {
   background: #14b8a610;
   border-color: #14b8a620;
@@ -229,7 +229,7 @@
   font-weight: 900;
 }
 
-/* ── Department cards ── */
+/* Department cards */
 .deptGrid {
   display: grid;
   gap: 1.25rem;
@@ -372,7 +372,7 @@
 .deptProgramming .deptStatValue { color: #a78bfa; }
 .deptProgramming .deptEnterBtn { background: linear-gradient(135deg,#5b21b6,#8b5cf6); }
 
-/* ── Quick actions ── */
+/* Quick actions */
 .quickActions {
   border-radius: 1rem;
   border: 1px solid #1e293b;
@@ -418,7 +418,7 @@
   line-height: 1.3;
 }
 
-/* ── User table ── */
+/* User table */
 .usersSection {
   display: flex;
   flex-direction: column;
@@ -622,7 +622,7 @@
 .emptyStateIcon { font-size: 2.25rem; margin-bottom: 0.5rem; }
 .emptyStateText { color: #64748b; font-size: 0.875rem; }
 
-/* ── Settings ── */
+/* Settings */
 .settingsCard {
   border-radius: 1rem;
   border: 1px solid #1e293b;
@@ -665,7 +665,7 @@
   color: #14b8a6;
 }
 
-/* ── Audit log ── */
+/* Audit log */
 .auditHeader { margin-bottom: 1rem; }
 .auditTitle {
   font-size: 1.25rem;
