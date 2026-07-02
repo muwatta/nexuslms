@@ -158,10 +158,50 @@ class CustomUserAdmin(BaseUserAdmin):
         ]
         return custom_urls + urls
 
+    @staticmethod
+    def _normalize_department(dept_value):
+        """
+        Normalize a department value from Excel to valid internal code.
+        
+        Maps common human labels to correct internal codes.
+        Returns normalized code or None if unrecognized.
+        """
+        if not dept_value:
+            return None
+            
+        # Valid internal codes
+        VALID_CODES = {"western", "arabic", "programming"}
+        
+        # Mapping of common labels to codes
+        DEPT_MAP = {
+            "western school": "western",
+            "western education": "western",
+            "western": "western",
+            "arabic school": "arabic",
+            "arabic/islamic studies": "arabic",
+            "arabic": "arabic",
+            "islamic studies": "arabic",
+            "digital school": "programming",
+            "digital technology": "programming",
+            "programming": "programming",
+            "technology": "programming",
+        }
+        
+        dept_lower = str(dept_value).lower().strip()
+        
+        # Check if it's already a valid code
+        if dept_lower in VALID_CODES:
+            return dept_lower
+        
+        # Try to normalize it
+        normalized = DEPT_MAP.get(dept_lower)
+        return normalized
+
     def import_excel(self, request):
         from django import forms
         import openpyxl
         from django.shortcuts import render, redirect
+        from django.contrib import messages
 
         class UploadForm(forms.Form):
             file = forms.FileField()
@@ -169,40 +209,98 @@ class CustomUserAdmin(BaseUserAdmin):
         if request.method == "POST":
             form = UploadForm(request.POST, request.FILES)
             if form.is_valid():
-                wb = openpyxl.load_workbook(form.cleaned_data["file"])
-                sheet = wb.active
-                for row in sheet.iter_rows(min_row=2, values_only=True):
-                    username, email, first_name, last_name, role, dept, student_cls = (
-                        row[:7]
-                    )
-                    if not username:
-                        continue
-                    user, created = User.objects.get_or_create(
-                        username=username,
-                        defaults={
-                            "email": email or "",
-                            "first_name": first_name or "",
-                            "last_name": last_name or "",
-                        },
-                    )
-                    if created:
-                        user.set_password(''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12)))
-                        user.save()
-                    profile, _ = Profile.objects.get_or_create(user=user)
-                    if role:
-                        profile.role = role
-                    if dept:
-                        profile.department = dept
-                    if student_cls:
-                        profile.student_class = student_cls
-                    profile.save()
-                self.message_user(request, "Users imported from Excel.")
-                return redirect("..")
+                try:
+                    wb = openpyxl.load_workbook(form.cleaned_data["file"])
+                    sheet = wb.active
+                    
+                    import_stats = {
+                        "created": 0,
+                        "updated": 0,
+                        "skipped": 0,
+                        "dept_normalized": 0,
+                        "dept_errors": [],
+                    }
+                    
+                    for row_num, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
+                        username, email, first_name, last_name, role, dept, student_cls = (
+                            row[:7]
+                        )
+                        if not username:
+                            continue
+                        
+                        # Normalize department
+                        normalized_dept = None
+                        if dept:
+                            normalized_dept = self._normalize_department(dept)
+                            if normalized_dept is None:
+                                import_stats["dept_errors"].append(
+                                    f"Row {row_num}: '{dept}' is not a recognized department. Skipping."
+                                )
+                                import_stats["skipped"] += 1
+                                continue
+                            elif str(dept).lower().strip() != normalized_dept:
+                                import_stats["dept_normalized"] += 1
+                        
+                        user, created = User.objects.get_or_create(
+                            username=username,
+                            defaults={
+                                "email": email or "",
+                                "first_name": first_name or "",
+                                "last_name": last_name or "",
+                            },
+                        )
+                        if created:
+                            user.set_password(''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12)))
+                            user.save()
+                        
+                        profile, is_new = Profile.objects.get_or_create(user=user)
+                        
+                        if role:
+                            profile.role = role
+                        if normalized_dept:
+                            profile.department = normalized_dept
+                        if student_cls:
+                            profile.student_class = student_cls
+                        profile.save()
+                        
+                        if is_new:
+                            import_stats["created"] += 1
+                        else:
+                            import_stats["updated"] += 1
+                    
+                    # Build user-friendly message
+                    msg_parts = [
+                        f"✓ Import complete: {import_stats['created']} created, {import_stats['updated']} updated."
+                    ]
+                    
+                    if import_stats["dept_normalized"] > 0:
+                        msg_parts.append(
+                            f"📝 {import_stats['dept_normalized']} departments were normalized from Excel labels to internal codes."
+                        )
+                    
+                    if import_stats["dept_errors"]:
+                        msg_parts.append(
+                            f"⚠️ {len(import_stats['dept_errors'])} rows skipped due to invalid departments:"
+                        )
+                        for error in import_stats["dept_errors"][:5]:  # Show first 5
+                            msg_parts.append(f"   {error}")
+                        if len(import_stats["dept_errors"]) > 5:
+                            msg_parts.append(
+                                f"   ... and {len(import_stats['dept_errors']) - 5} more."
+                            )
+                    
+                    messages.success(request, " ".join(msg_parts))
+                    return redirect("..")
+                    
+                except Exception as e:
+                    messages.error(request, f"Error importing file: {str(e)}")
+                    
         else:
             form = UploadForm()
 
         context = {"form": form, "title": "Import users from Excel"}
         return render(request, "admin/import_excel.html", context)
+
 
     @admin.display(description="Role", ordering="profile__role")
     def get_role(self, obj):
