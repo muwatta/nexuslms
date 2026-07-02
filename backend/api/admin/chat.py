@@ -21,7 +21,7 @@ class ChatMessageAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("sender", "recipient")
 
-    # ── Display helpers ────────────────────────────────────────────────────────
+    # Display helpers
 
     @admin.display(description="From", ordering="sender__username")
     def sender_display(self, obj):
@@ -70,7 +70,7 @@ class ChatMessageAdmin(admin.ModelAdmin):
             timesince(obj.timestamp),
         )
 
-    # ── Actions ────────────────────────────────────────────────────────────────
+    # Actions
 
     actions = ["mark_as_read", "mark_as_unread", "delete_selected"]
 
