@@ -8,6 +8,7 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import ProfileDropdown from "./ProfileDropdown";
 import api from "../api";
+import styles from "./Navbar.module.css";
 
 interface NavItem {
   to?: string;
@@ -16,10 +17,10 @@ interface NavItem {
   permission?: string;
   alwaysShow?: boolean;
   children?: NavItem[];
-  divider?: boolean; // show a divider before this item
+  divider?: boolean;
 }
 
-// ── Role-based nav builder ────────────────────────────────────────────────────
+// ── Role-based nav builder ──
 function buildNav(role: string): NavItem[] {
   const isTeacher = role === "teacher" || role === "instructor";
   const isStudent = role === "student";
@@ -73,10 +74,9 @@ function buildNav(role: string): NavItem[] {
     ];
   }
 
-  // ── Admin / super_admin / school_admin ────────────────────────────────────
+  // Admin / super_admin / school_admin
   return [
     { to: "/dashboard", label: "Dashboard", icon: "🏠", alwaysShow: true },
-    // Academic dropdown
     {
       label: "Academic",
       icon: "📖",
@@ -108,7 +108,6 @@ function buildNav(role: string): NavItem[] {
         },
       ],
     },
-    // Student Life dropdown
     {
       label: "Student Life",
       icon: "🏆",
@@ -140,7 +139,6 @@ function buildNav(role: string): NavItem[] {
         },
       ],
     },
-    // Finance & Admin dropdown
     {
       label: "Admin",
       icon: "⚙️",
@@ -171,7 +169,7 @@ function buildNav(role: string): NavItem[] {
   ];
 }
 
-// ── Dept accent colours
+// ── Dept accent colours ──
 const DEPT_ACCENT: Record<string, { from: string; to: string }> = {
   western: { from: "#1d4ed8", to: "#0ea5e9" },
   arabic: { from: "#065f46", to: "#10b981" },
@@ -239,10 +237,8 @@ const Navbar: React.FC = () => {
         setLiveUser(norm);
         localStorage.setItem("user_data", JSON.stringify(norm));
       })
-      .catch((err) => {
-        if (!active) {
-          setError("Could not load profile");
-        }
+      .catch(() => {
+        if (active) setError("Could not load profile");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -324,142 +320,46 @@ const Navbar: React.FC = () => {
     (location.pathname === to ||
       (to !== "/dashboard" && location.pathname.startsWith(to)));
 
-  const drawerLink = (active: boolean, sub = false): React.CSSProperties => ({
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: sub ? "8px 16px 8px 40px" : "10px 16px",
-    borderRadius: "10px",
-    textDecoration: "none",
-    fontSize: sub ? "13px" : "14px",
-    fontWeight: sub ? 400 : 500,
-    color: active ? (sub ? "#0d9488" : "white") : sub ? "#6b7280" : "#374151",
-    background: active
-      ? sub
-        ? "#f0fdfa"
-        : `linear-gradient(135deg, ${accent.from}, ${accent.to})`
-      : "transparent",
-    transition: "all 0.15s",
-    borderLeft:
-      sub && active
-        ? `3px solid ${accent.from}`
-        : sub
-          ? "3px solid transparent"
-          : "none",
-  });
-
   return (
     <>
-      {/* ── Topbar─ */}
+      {/* ── Top bar ── */}
+      {/* ── Top bar ── */}
       <nav
-        style={{
-          background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 50,
-          height: "60px",
-          boxShadow: "0 1px 20px rgba(0,0,0,0.15)",
-        }}
+        className={styles.navbar}
+        style={
+          {
+            "--accent-from": accent.from,
+            "--accent-to": accent.to,
+          } as React.CSSProperties
+        }
       >
-        <div
-          style={{
-            height: "100%",
-            padding: "0 16px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            maxWidth: "100%",
-          }}
-        >
-          {/* Left: hamburger + logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div className={styles.navbarInner}>
+          <div className={styles.leftSection}>
             {isAuthenticated && (
               <button
                 onClick={() => setDrawerOpen((p) => !p)}
-                style={{
-                  color: "white",
-                  width: "36px",
-                  height: "36px",
-                  background: "rgba(255,255,255,0.15)",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontSize: "18px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                className={styles.hamburger}
               >
                 ☰
               </button>
             )}
-            <Link
-              to="/"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                textDecoration: "none",
-              }}
-            >
-              <div
-                style={{
-                  width: "34px",
-                  height: "34px",
-                  borderRadius: "8px",
-                  background: "rgba(255,255,255,0.2)",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  fontWeight: "black",
-                  fontSize: "16px",
-                }}
-              >
-                M
-              </div>
-              <span
-                style={{
-                  color: "white",
-                  fontWeight: 800,
-                  fontSize: "16px",
-                  letterSpacing: "-0.3px",
-                }}
-              >
-                Muwatta
-              </span>
+            <Link to="/" className={styles.logoLink}>
+              <div className={styles.logoBox}>M</div>
+              <span className={styles.logoText}>Muwatta</span>
             </Link>
           </div>
 
-          {/* Right: actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div className={styles.rightSection}>
             {isAuthenticated ? (
               <ProfileDropdown />
             ) : (
               <>
-                <Link
-                  to="/login"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    fontSize: "14px",
-                    fontWeight: 500,
-                  }}
-                >
+                <Link to="/login" className={styles.navLink}>
                   Login
                 </Link>
                 <Link
                   to="/signup"
-                  style={{
-                    color: "white",
-                    textDecoration: "none",
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    marginLeft: "8px",
-                  }}
+                  className={`${styles.navLink} ${styles.navLinkSignup}`}
                 >
                   Sign Up
                 </Link>
@@ -467,18 +367,7 @@ const Navbar: React.FC = () => {
             )}
             <button
               onClick={() => setDarkMode((p) => !p)}
-              style={{
-                width: "36px",
-                height: "36px",
-                background: "rgba(255,255,255,0.15)",
-                border: "none",
-                borderRadius: "50%",
-                cursor: "pointer",
-                fontSize: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              className={styles.darkToggle}
             >
               {darkMode ? "🌙" : "☀️"}
             </button>
@@ -486,119 +375,42 @@ const Navbar: React.FC = () => {
         </div>
       </nav>
 
-      {/* ── Backdrop ────────────────────────────────────────────────────── */}
+      {/* ── Backdrop ── */}
       {drawerOpen && (
-        <div
-          onClick={() => setDrawerOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 40,
-            background: "rgba(0,0,0,0.45)",
-            backdropFilter: "blur(2px)",
-          }}
-        />
+        <div className={styles.backdrop} onClick={() => setDrawerOpen(false)} />
       )}
 
-      {/* ── Slide-out Drawer ─────────────────────────────────────────────── */}
+      {/* ── Drawer ── */}
+      {/* stylelint-disable-next-line */}
+      {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+      {/* @ts-ignore */}
       <div
         ref={drawerRef}
-        style={{
-          position: "fixed",
-          top: "60px",
-          left: 0,
-          height: "calc(100% - 60px)",
-          width: "280px",
-          zIndex: 50,
-          background: "white",
-          boxShadow: "4px 0 24px rgba(0,0,0,0.12)",
-          transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
-          transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
-          display: "flex",
-          flexDirection: "column",
-          overflowY: "auto",
-        }}
-        className="dark:bg-gray-900"
+        className={`${styles.drawer} ${drawerOpen ? styles.drawerOpen : ""}`}
+        style={
+          {
+            "--accent-from": accent.from,
+            "--accent-to": accent.to,
+          } as React.CSSProperties
+        }
       >
         {/* User strip */}
         {liveUser && (
-          <div
-            style={{
-              padding: "14px 18px",
-              background: `linear-gradient(135deg, ${accent.from}15, ${accent.to}10)`,
-              borderBottom: `1px solid ${accent.from}20`,
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div
-                style={{
-                  width: "44px",
-                  height: "44px",
-                  borderRadius: "12px",
-                  background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "15px",
-                  flexShrink: 0,
-                  boxShadow: `0 4px 12px ${accent.from}40`,
-                }}
-              >
-                {initials}
-              </div>
+          <div className={styles.drawerUserStrip}>
+            <div className={styles.userStripInner}>
+              <div className={styles.userAvatar}>{initials}</div>
+              {/* stylelint-disable-next-line */}
+              {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+              {/* @ts-ignore */}
               <div style={{ minWidth: 0 }}>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#111827",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
+                <p className={styles.userName}>
                   {displayName || liveUser.username}
                 </p>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "6px",
-                    marginTop: "2px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      background: `${accent.from}15`,
-                      color: accent.from,
-                      padding: "1px 8px",
-                      borderRadius: "20px",
-                      fontWeight: 600,
-                      textTransform: "capitalize",
-                    }}
-                  >
+                <div className={styles.userBadgeGroup}>
+                  <span className={styles.userBadge}>
                     {role.replace(/_/g, " ")}
                   </span>
-                  {dept && (
-                    <span
-                      style={{
-                        fontSize: "11px",
-                        background: "#f3f4f6",
-                        color: "#6b7280",
-                        padding: "1px 8px",
-                        borderRadius: "20px",
-                        fontWeight: 500,
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {dept}
-                    </span>
-                  )}
+                  {dept && <span className={styles.userDept}>{dept}</span>}
                 </div>
               </div>
             </div>
@@ -606,19 +418,10 @@ const Navbar: React.FC = () => {
         )}
 
         {/* Nav items */}
-        <nav
-          style={{
-            flex: 1,
-            padding: "10px 10px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "2px",
-          }}
-        >
+        <nav className={styles.drawerNav}>
           {navItems.map((item) => {
             const active = isActive(item.to);
 
-            // ── Dropdown group ─────────────────────────────────────────
             if (item.children) {
               const visibleChildren = item.children.filter(canShow);
               if (visibleChildren.length === 0) return null;
@@ -631,96 +434,32 @@ const Navbar: React.FC = () => {
                     onClick={() =>
                       setOpenMenu((p) => (p === item.label ? null : item.label))
                     }
-                    style={{
-                      width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "10px 14px",
-                      borderRadius: "10px",
-                      border: "none",
-                      background: anyActive
-                        ? `linear-gradient(135deg, ${accent.from}, ${accent.to})`
-                        : "transparent",
-                      color: anyActive ? "white" : "#374151",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      textAlign: "left",
-                      transition: "all 0.15s",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!anyActive)
-                        (e.currentTarget as HTMLElement).style.background =
-                          "#f9fafb";
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!anyActive)
-                        (e.currentTarget as HTMLElement).style.background =
-                          "transparent";
-                    }}
+                    className={`${styles.drawerNavItem} ${anyActive ? styles.drawerNavItemActive : ""}`}
                   >
+                    <span className={styles.drawerNavIcon}>{item.icon}</span>
+                    <span className={styles.drawerNavLabel}>{item.label}</span>
                     <span
-                      style={{
-                        fontSize: "17px",
-                        width: "22px",
-                        textAlign: "center",
-                      }}
-                    >
-                      {item.icon}
-                    </span>
-                    <span style={{ flex: 1 }}>{item.label}</span>
-                    <span
-                      style={{
-                        fontSize: "10px",
-                        opacity: 0.7,
-                        transition: "transform 0.2s",
-                        display: "inline-block",
-                        transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                      }}
+                      className={`${styles.drawerNavArrow} ${
+                        isOpen ? styles.drawerNavArrowOpen : ""
+                      }`}
                     >
                       ▼
                     </span>
                   </button>
 
-                  {/* Children */}
                   {isOpen && (
-                    <div
-                      style={{
-                        paddingLeft: "8px",
-                        marginTop: "2px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "1px",
-                      }}
-                    >
+                    <div className={styles.drawerSubNav}>
                       {visibleChildren.map((child) => {
                         const childActive = !!isActive(child.to);
                         return (
                           <Link
                             key={child.to}
                             to={child.to ?? "/"}
-                            style={drawerLink(childActive, true)}
-                            onMouseEnter={(e) => {
-                              if (!childActive)
-                                (
-                                  e.currentTarget as HTMLElement
-                                ).style.background = "#f9fafb";
-                            }}
-                            onMouseLeave={(e) => {
-                              if (!childActive)
-                                (
-                                  e.currentTarget as HTMLElement
-                                ).style.background = "transparent";
-                            }}
+                            className={`${styles.drawerSubItem} ${
+                              childActive ? styles.drawerSubItemActive : ""
+                            }`}
                           >
-                            <span
-                              style={{
-                                fontSize: "14px",
-                                width: "18px",
-                                textAlign: "center",
-                              }}
-                            >
+                            <span className={styles.drawerSubIcon}>
                               {child.icon}
                             </span>
                             {child.label}
@@ -733,86 +472,27 @@ const Navbar: React.FC = () => {
               );
             }
 
+            // Regular link
             return (
               <Link
                 key={item.to}
                 to={item.to!}
-                style={drawerLink(!!active)}
-                onMouseEnter={(e) => {
-                  if (!active)
-                    (e.currentTarget as HTMLElement).style.background =
-                      "#f9fafb";
-                }}
-                onMouseLeave={(e) => {
-                  if (!active)
-                    (e.currentTarget as HTMLElement).style.background =
-                      "transparent";
-                }}
+                className={`${styles.drawerNavItem} ${
+                  active ? styles.drawerNavItemActive : ""
+                }`}
               >
-                <span
-                  style={{
-                    fontSize: "17px",
-                    width: "22px",
-                    textAlign: "center",
-                  }}
-                >
-                  {item.icon}
-                </span>
+                <span className={styles.drawerNavIcon}>{item.icon}</span>
                 {item.label}
-                {active && (
-                  <span
-                    style={{
-                      marginLeft: "auto",
-                      width: "7px",
-                      height: "7px",
-                      borderRadius: "50%",
-                      background: "white",
-                    }}
-                  />
-                )}
+                {active && <span className={styles.activeDot} />}
               </Link>
             );
           })}
         </nav>
 
-        {/* Divider + logout */}
-        <div
-          style={{
-            flexShrink: 0,
-            borderTop: "1px solid #f3f4f6",
-            padding: "10px",
-          }}
-        >
-          <button
-            onClick={handleLogoutClick}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "10px 14px",
-              borderRadius: "10px",
-              background: "transparent",
-              color: "#dc2626",
-              border: "none",
-              fontSize: "14px",
-              fontWeight: 500,
-              cursor: "pointer",
-              transition: "background 0.15s",
-            }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLElement).style.background = "#fef2f2")
-            }
-            onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLElement).style.background =
-                "transparent")
-            }
-          >
-            <span
-              style={{ fontSize: "17px", width: "22px", textAlign: "center" }}
-            >
-              🚪
-            </span>
+        {/* Footer logout */}
+        <div className={styles.drawerFooter}>
+          <button onClick={handleLogoutClick} className={styles.logoutBtn}>
+            <span className={styles.logoutIcon}>🚪</span>
             Logout
           </button>
         </div>

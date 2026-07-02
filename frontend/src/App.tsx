@@ -216,7 +216,7 @@ const AppShell: React.FC = () => {
   const showNavbar = isLoggedIn && !isSelfLayout;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
+    <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
       {showNavbar && <Navbar />}
 
       <main className={showNavbar ? "pt-[60px]" : ""}>
