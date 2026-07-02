@@ -2,19 +2,13 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from api.core.constants import ROLE_CHOICES as CANONICAL_ROLE_CHOICES
 
 class User(AbstractUser):
    
     
-    ROLE_CHOICES = (
-        ("student",       _("Student")),
-        ("teacher",       _("Teacher")),
-        ("instructor",    _("Instructor")),
-        ("admin",         _("Admin")),
-        ("parent",        _("Parent")),
-        ("school_admin",  _("School Admin")),
-        ("super_admin",   _("Super Admin")),
-    )
+    # Use canonical roles from api.core.constants
+    ROLE_CHOICES = CANONICAL_ROLE_CHOICES
 
     role = models.CharField(
         _("role"),

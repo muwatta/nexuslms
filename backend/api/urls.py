@@ -22,6 +22,7 @@ from .views import (
     InstructorResultsViewSet, StudentDashboardView, StudentCourseViewSet,
     StudentEnrollmentViewSet, StudentChatView, AnnouncementListView,
 )
+from .views.core import RolesAndPermissionsView
 from .views.permissions_view import PermissionsMeView 
 from .core.models import Profile
 
@@ -97,6 +98,7 @@ urlpatterns = [
     # PERMISSIONS & ANALYTICS
     # =================================================================
     path("permissions/me/", PermissionsMeView.as_view(), name="permissions_me"),
+    path("roles-and-permissions/", RolesAndPermissionsView.as_view(), name="roles_and_permissions"),
     path("analytics/student/<int:student_id>/", student_analytics, name="student_analytics"),
 
     # =================================================================

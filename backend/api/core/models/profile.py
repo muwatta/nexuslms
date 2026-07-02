@@ -2,31 +2,12 @@
 
 from django.db import models
 from django.conf import settings
-
-
-
-ROLE_CHOICES = [
-    ("super_admin",   "Super Admin"),
-    ("admin",         "Admin"),
-    ("school_admin",  "School Admin"),
-    ("teacher",       "Teacher"),
-    ("non_teaching",  "Non-Teaching Staff"),
-    ("student",       "Student"),
-    ("parent",        "Parent"),
-    ("visitor",       "Visitor"),
-]
+from api.core.constants import ROLE_CHOICES, DEPARTMENT_CHOICES
 
 
 TEACHER_TYPE_CHOICES = [
     ("class",   "Class Teacher"),    # homeroom / form teacher
     ("subject", "Subject Teacher"),  # subject specialist only
-]
-
-
-DEPARTMENT_CHOICES = [
-    ("western",     "Western Education"),
-    ("arabic",      "Arabic/Islamic Studies"),
-    ("programming", "Digital Technology"),
 ]
 
 

@@ -1,21 +1,15 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import useTheme from "../hooks/useTheme";
+import {
+  useRolesAndPermissions,
+  createRoleLabelsMap,
+} from "../hooks/useRolesAndPermissions";
 import { getUserData, clearUserData, hasPermission } from "../utils/authUtils";
 
 interface ProfileDropdownProps {
   onProfileClick?: () => void;
 }
-
-const ROLE_LABELS: Record<string, string> = {
-  admin: "Administrator",
-  super_admin: "Super Admin",
-  school_admin: "School Admin",
-  instructor: "Instructor",
-  teacher: "Instructor",
-  student: "Student",
-  parent: "Parent",
-};
 
 const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   onProfileClick,
@@ -24,8 +18,15 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { data: rolesData } = useRolesAndPermissions();
 
   const userData = getUserData();
+
+  // Create role labels map from API data
+  const roleLabelsMap = useMemo(
+    () => createRoleLabelsMap(rolesData),
+    [rolesData],
+  );
 
   // Close on outside click
   useEffect(() => {
@@ -67,7 +68,8 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
     ? [firstName, lastName].filter(Boolean).join(" ")
     : username || "User";
 
-  const roleLabel = ROLE_LABELS[role] ?? "User";
+  // Use role label from API data, fallback to role code
+  const roleLabel = roleLabelsMap[role] || role || "User";
 
   const showAdminLink = hasPermission("admin.access");
 

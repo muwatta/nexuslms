@@ -387,8 +387,12 @@ export function getSubjectsForStream(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ROLE → PERMISSIONS MAP  (must stay in sync with backend permissions_view.py)
+// ROLE → PERMISSIONS MAP (FALLBACK - should fetch from /api/roles-and-permissions/)
 // ─────────────────────────────────────────────────────────────────────────────
+// IMPORTANT: This is a fallback for offline/early authentication.
+// The canonical version is in backend/api/core/constants.py
+// Use the hook useRolesAndPermissions() to get the live version from the API.
+// If you update permissions, update BOTH this file AND backend/api/core/constants.py
 
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
   super_admin: [
@@ -406,6 +410,8 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "enrollment.manage",
     "quiz.view",
     "quiz.create",
+    "quiz.edit",
+    "quiz.delete",
     "analytics.view",
     "analytics.full",
     "payment.view",
@@ -448,10 +454,9 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "department.access.arabic",
     "department.access.programming",
     "audit.view",
-    "subject.manage",
-    "teacher.assign",
   ],
   school_admin: [
+    "admin.access",
     "course.view",
     "course.create",
     "course.edit",
@@ -460,13 +465,17 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "assignment.edit",
     "enrollment.view",
     "enrollment.create",
+    "enrollment.manage",
+    "quiz.view",
     "analytics.view",
     "payment.view",
     "user.view",
     "user.create",
     "user.edit",
     "grade.view",
-    "subject.manage",
+    "grade.edit",
+    "department.access.*",
+    "audit.view",
   ],
   teacher: [
     "course.view",
@@ -476,20 +485,27 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "enrollment.view",
     "quiz.view",
     "quiz.create",
+    "quiz.edit",
+    "analytics.view",
     "grade.view",
     "grade.edit",
-    "subject.view_assigned",
+    "subject.manage",
   ],
-  non_teaching: ["course.view", "enrollment.view", "grade.view"],
+  non_teaching: [
+    "analytics.view",
+    "payment.view",
+    "payment.manage",
+    "user.view",
+  ],
   student: [
     "course.view",
     "assignment.view",
-    "enrollment.view",
     "quiz.view",
+    "quiz.submit",
     "grade.view",
-    "teacher.view_mine",
+    "chat.access",
   ],
-  parent: ["grade.view", "course.view", "teacher.view_mine"],
+  parent: ["course.view", "assignment.view", "grade.view", "chat.access"],
   visitor: ["course.view"],
 };
 

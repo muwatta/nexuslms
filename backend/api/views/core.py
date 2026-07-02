@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 
 from api.core.models import Profile
+from api.core.constants import get_roles_for_frontend
 from api.serializers import ProfileSerializer
 from api.serializers.user import UserRegistrationSerializer
 
@@ -152,3 +153,42 @@ class RegisterView(APIView):
             {"id": user.id, "username": user.username, "role": user.role},
             status=status.HTTP_201_CREATED,
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ROLES & PERMISSIONS ENDPOINT (single source of truth for frontend)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class RolesAndPermissionsView(APIView):
+    """
+    Serves the canonical definition of roles, permissions, and departments.
+    
+    Frontend should consume this endpoint instead of hardcoding role/permission
+    definitions. This ensures frontend and backend stay in sync.
+    
+    GET /api/roles-and-permissions/
+    
+    Returns:
+    {
+        "roles": [
+            {
+                "code": "super_admin",
+                "label": "Super Admin",
+                "permissions": [...]
+            },
+            ...
+        ],
+        "departments": [
+            {
+                "code": "western",
+                "label": "Western Education"
+            },
+            ...
+        ]
+    }
+    """
+    
+    permission_classes = [AllowAny]  # Public endpoint
+    
+    def get(self, request, *args, **kwargs):
+        return Response(get_roles_for_frontend())
