@@ -2,14 +2,10 @@
 {% load static %}
 
 {% block object-tools %}
-<ul class="object-tools">
-  {% url 'admin:user_import_excel' as import_url %}
-  {% if import_url %}
-  <li>
-    <a href="{{ import_url }}" class="addlink">⬆ Import from Excel</a>
-  </li>
-  {% endif %}
-</ul>
+{% url 'admin:user_import_excel' as import_url %}
+{% if import_url %}
+<ul class="object-tools"><li><a href="{{ import_url }}" class="addlink">⬆ Import from Excel</a></li></ul>
+{% endif %}
 {{ block.super }}
 {% endblock %}
 

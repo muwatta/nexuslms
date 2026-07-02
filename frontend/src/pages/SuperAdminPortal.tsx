@@ -639,15 +639,19 @@ const SuperAdminPortal: React.FC = () => {
                         key={item.href ?? item.route}
                         whileHover={{ y: -2 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() =>
-                          item.href
-                            ? window.open(
-                                item.href,
-                                "_blank",
-                                "noopener,noreferrer",
-                              )
-                            : navigate(item.route)
-                        }
+                        onClick={() => {
+                          if (item.href) {
+                            window.open(
+                              item.href,
+                              "_blank",
+                              "noopener,noreferrer",
+                            );
+                            return;
+                          }
+                          if (item.route) {
+                            navigate(item.route);
+                          }
+                        }}
                         className={styles.quickActionBtn}
                       >
                         <span className={styles.quickActionIcon}>
