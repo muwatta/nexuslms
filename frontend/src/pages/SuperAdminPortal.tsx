@@ -629,12 +629,25 @@ const SuperAdminPortal: React.FC = () => {
                       },
                       { label: "Analytics", icon: "📊", route: "/analytics" },
                       { label: "AI Help", icon: "🤖", route: "/ai" },
+                      {
+                        label: "Cleanup import",
+                        icon: "🧹",
+                        href: "https://github.com/muwatta/nexuslms/blob/main/backend/api/README_ADMIN_API.md#management-command-normalize_departments",
+                      },
                     ].map((item) => (
                       <motion.button
-                        key={item.route}
+                        key={item.href ?? item.route}
                         whileHover={{ y: -2 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => navigate(item.route)}
+                        onClick={() =>
+                          item.href
+                            ? window.open(
+                                item.href,
+                                "_blank",
+                                "noopener,noreferrer",
+                              )
+                            : navigate(item.route)
+                        }
                         className={styles.quickActionBtn}
                       >
                         <span className={styles.quickActionIcon}>
