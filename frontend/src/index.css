@@ -2,12 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
-/* global light/dark defaults */
 @layer base {
-  body {
-    @apply bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+  :root {
+    color-scheme: dark;
   }
+
+  * {
+    @apply box-border;
+  }
+
+  body {
+    @apply min-h-screen bg-slate-950 text-slate-100 antialiased;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+
   a {
-    @apply text-primary hover:text-primary-dark dark:text-primary-light;
+    @apply text-teal-400 transition-colors hover:text-teal-300;
+  }
+
+  ::selection {
+    @apply bg-teal-500/40 text-white;
+  }
+}
+
+@layer components {
+  .app-shell {
+    min-height: 100vh;
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(20, 184, 166, 0.16),
+        transparent 32%
+      ),
+      linear-gradient(135deg, #020617 0%, #0f172a 100%);
+    color: #f8fafc;
+  }
+
+  .app-card {
+    @apply rounded-2xl border border-slate-800/80 bg-slate-900/80 shadow-[0_18px_70px_rgba(2,6,23,0.45)] backdrop-blur;
+  }
+
+  .app-panel {
+    @apply rounded-2xl border border-slate-800/80 bg-slate-900/80 shadow-lg shadow-slate-950/40;
+  }
+
+  .app-page-title {
+    @apply text-2xl font-semibold tracking-tight text-white sm:text-3xl;
+  }
+
+  .app-page-subtitle {
+    @apply mt-1 text-sm text-slate-400;
+  }
+
+  .app-section-title {
+    @apply mb-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400;
+  }
+
+  .app-field-label {
+    @apply mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400;
+  }
+
+  .app-input,
+  .app-select,
+  .app-textarea {
+    @apply w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-100 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 placeholder:text-slate-500;
+  }
+
+  .app-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-teal-500/30 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .app-btn-primary {
+    @apply bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-lg shadow-teal-500/20 hover:from-teal-400 hover:to-indigo-500;
+  }
+
+  .app-btn-secondary {
+    @apply border border-slate-700 bg-slate-800/90 text-slate-200 hover:bg-slate-700;
+  }
+
+  .app-btn-ghost {
+    @apply border border-transparent bg-transparent text-slate-300 hover:bg-slate-800/80 hover:text-white;
+  }
+
+  .app-badge {
+    @apply inline-flex items-center rounded-full border border-slate-700/80 bg-slate-800/80 px-2.5 py-1 text-xs font-medium text-slate-300;
   }
 }

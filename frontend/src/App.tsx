@@ -1,7 +1,4 @@
-// frontend/src/App.tsx
-import React, { Suspense } from "react";
-import ParentDashboard from "./pages/ParentDashboard";
-
+import React, { Suspense, useEffect, useState } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -10,54 +7,6 @@ import {
   useLocation,
 } from "react-router-dom";
 import { PageLoader } from "./components/Skeleton";
-
-const Login = React.lazy(() => import("./pages/Login"));
-const Signup = React.lazy(() => import("./pages/Signup"));
-const ForgotPassword = React.lazy(() => import("./pages/ForgotPassword"));
-const Dashboard = React.lazy(() => import("./pages/Dashboard"));
-const ArabicDashboard = React.lazy(() => import("./pages/ArabicDashboard"));
-const WesternDashboard = React.lazy(() => import("./pages/WesternDashboard"));
-const ProgrammingDashboard = React.lazy(
-  () => import("./pages/ProgrammingDashboard"),
-);
-const StudentDashboard = React.lazy(() => import("./pages/StudentDashboard"));
-const Courses = React.lazy(() => import("./pages/Courses"));
-const Enrollments = React.lazy(() => import("./pages/Enrollments"));
-const Assignments = React.lazy(() => import("./pages/Assignments"));
-const Payments = React.lazy(() => import("./pages/Payments"));
-const Quizzes = React.lazy(() => import("./pages/Quizzes"));
-const Analytics = React.lazy(() => import("./pages/Analytics"));
-const ViewAchievements = React.lazy(() => import("./pages/ViewAchievements"));
-const ViewProjects = React.lazy(() => import("./pages/ViewProjects"));
-const ViewMilestones = React.lazy(() => import("./pages/ViewMilestones"));
-const AIHelp = React.lazy(() => import("./pages/AIHelp"));
-const Unauthorized = React.lazy(() => import("./pages/Unauthorized"));
-const About = React.lazy(() => import("./pages/About"));
-const Programs = React.lazy(() => import("./pages/Programs"));
-const Locations = React.lazy(() => import("./pages/Locations"));
-const Contact = React.lazy(() => import("./pages/Contact"));
-const Privacy = React.lazy(() => import("./pages/Privacy"));
-const PracticeQuestions = React.lazy(() => import("./pages/PracticeQuestions"));
-const ManageUsers = React.lazy(() => import("./pages/ManageUsers"));
-const ParentPortal = React.lazy(() => import("./pages/ParentPortal"));
-const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
-const SuperAdminPortal = React.lazy(() => import("./pages/SuperAdminPortal"));
-const Landing = React.lazy(() => import("./pages/Landing"));
-const Profile = React.lazy(() => import("./pages/Profile"));
-
-// ── Teacher dashboards (renamed from Instructor) ──────────────────────────────
-// Re-use the existing files under their old names — no new files needed yet.
-// TeacherDashboard wraps the old InstructorDashboard with updated role checks.
-const TeacherDashboard = React.lazy(
-  () => import("./pages/InstructorDashboard"),
-);
-const SubjectTeacherDashboard = React.lazy(
-  () => import("./pages/SubjectInstructorDashboard"),
-);
-const ClassTeacherDashboard = React.lazy(
-  () => import("./pages/ClassInstructorDashboard"),
-);
-
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import AIChat from "./components/AIChat";
@@ -65,6 +14,75 @@ import Notifications from "./components/Notifications";
 import { getDashboardRouteByRole, getUserData } from "./utils/authUtils";
 
 
+const lazy = (fn: () => Promise<{ default: React.ComponentType<any> }>) =>
+  React.lazy(fn);
+
+// Public / marketing
+const Landing = lazy(() => import("./pages/Landing"));
+const About = lazy(() => import("./pages/About"));
+const Programs = lazy(() => import("./pages/Programs"));
+const Locations = lazy(() => import("./pages/Locations"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const PracticeQuestions = lazy(() => import("./pages/PracticeQuestions"));
+
+// Auth
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const Unauthorized = lazy(() => import("./pages/Unauthorized"));
+
+// Core generic
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Profile = lazy(() => import("./pages/Profile"));
+const AIHelp = lazy(() => import("./pages/AIHelp"));
+
+// Admin
+const SuperAdminPortal = lazy(() => import("./pages/SuperAdminPortal"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const ManageUsers = lazy(() => import("./pages/ManageUsers"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+
+// School admin (department)
+const WesternDashboard = lazy(() => import("./pages/WesternDashboard"));
+const ArabicDashboard = lazy(() => import("./pages/ArabicDashboard"));
+const ProgrammingDashboard = lazy(() => import("./pages/ProgrammingDashboard"));
+
+// Teacher
+const TeacherDashboard = lazy(() => import("./pages/InstructorDashboard"));
+const SubjectTeacherDashboard = lazy(
+  () => import("./pages/SubjectInstructorDashboard"),
+);
+const ClassTeacherDashboard = lazy(
+  () => import("./pages/ClassInstructorDashboard"),
+);
+
+// Student / Parent
+const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
+const ParentPortal = lazy(() => import("./pages/ParentPortal"));
+
+// Features
+const Courses = lazy(() => import("./pages/Courses"));
+const Enrollments = lazy(() => import("./pages/Enrollments"));
+const Assignments = lazy(() => import("./pages/Assignments"));
+const Payments = lazy(() => import("./pages/Payments"));
+const Quizzes = lazy(() => import("./pages/Quizzes"));
+const ViewAchievements = lazy(() => import("./pages/ViewAchievements"));
+const ViewProjects = lazy(() => import("./pages/ViewProjects"));
+const ViewMilestones = lazy(() => import("./pages/ViewMilestones"));
+
+// Teacher routes that own their full layout (no global Navbar)
+const SELF_LAYOUT_PREFIXES = [
+  "/subject-teacher-dashboard",
+  "/class-teacher-dashboard",
+  "/teacher-dashboard",
+  // legacy aliases
+  "/subject-instructor-dashboard",
+  "/class-instructor-dashboard",
+  "/instructor-dashboard",
+];
+
+// Error Bodar
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode; fallback?: React.ReactNode },
   { hasError: boolean; error?: Error }
@@ -73,51 +91,50 @@ class ErrorBoundary extends React.Component<
     super(props);
     this.state = { hasError: false };
   }
+
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
   }
+
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("🔴 Page crashed:", error, info);
   }
+
   render() {
-    if (this.state.hasError) {
-      return (
-        this.props.fallback ?? (
-          <div
-            style={{
-              padding: "40px",
-              textAlign: "center",
-              color: "#dc2626",
-              fontFamily: "sans-serif",
-            }}
-          >
-            <h2>Something went wrong loading this page.</h2>
-            <p style={{ color: "#6b7280", fontSize: "14px" }}>
-              {this.state.error?.message}
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              style={{
-                marginTop: "16px",
-                padding: "8px 20px",
-                background: "#3b82f6",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-              }}
-            >
-              Reload Page
-            </button>
-          </div>
-        )
-      );
-    }
-    return this.props.children;
+    if (!this.state.hasError) return this.props.children;
+    if (this.props.fallback !== undefined) return this.props.fallback;
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-10 font-sans">
+        <p className="text-5xl mb-4">💥</p>
+        <h2 className="text-lg font-bold text-red-600 mb-2">
+          Something went wrong loading this page.
+        </h2>
+        <p className="text-sm text-gray-400 mb-6 max-w-sm">
+          {this.state.error?.message}
+        </p>
+        <button
+          onClick={() => this.setState({ hasError: false })}
+          className="mr-3 px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+        >
+          Try Again
+        </button>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-5 py-2 text-sm font-semibold border border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 transition-colors"
+        >
+          Reload Page
+        </button>
+      </div>
+    );
   }
 }
 
-// ─── Smart Home Router ────────────────────────────────────────────────────────
+// Page wrapper (ErrorBoundary per route
+const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <ErrorBoundary>{children}</ErrorBoundary>
+);
+
+// Smart home router — redirects logged-in users to their dashboard─
 const HomeRouter: React.FC = () => {
   const userData = getUserData();
   if (userData?.role) {
@@ -128,10 +145,10 @@ const HomeRouter: React.FC = () => {
     );
     return <Navigate to={route} replace />;
   }
-  if (userData) return <Navigate to="/dashboard" replace />;
   return <Landing />;
 };
 
+// Generic /dashboard → role-specific redirect─
 const DashboardRouter: React.FC = () => {
   const userData = getUserData();
   if (userData?.role) {
@@ -145,47 +162,68 @@ const DashboardRouter: React.FC = () => {
   return <Dashboard />;
 };
 
-// ─── Page wrapper ─────────────────────────────────────────────────────────────
-const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ErrorBoundary>{children}</ErrorBoundary>
+// 40pag
+const NotFound: React.FC = () => (
+  <div className="min-h-screen flex flex-col items-center justify-center text-center p-10">
+    <p className="text-8xl mb-4 font-black text-gray-200 dark:text-gray-800">
+      404
+    </p>
+    <h1 className="text-2xl font-black text-gray-800 dark:text-gray-200 mb-2">
+      Page not found
+    </h1>
+    <p className="text-gray-400 mb-8 text-sm">
+      The page you're looking for doesn't exist or was moved.
+    </p>
+    <a
+      href="/"
+      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors text-sm"
+    >
+      Go Home
+    </a>
+  </div>
 );
 
-// ─── App ──────────────────────────────────────────────────────────────────────
-// Routes that have their own full-screen layout (no global Navbar)
-const SELF_LAYOUT_ROUTES = [
-  "/subject-teacher-dashboard",
-  "/class-teacher-dashboard",
-  "/teacher-dashboard",
-  "/subject-instructor-dashboard",
-  "/class-instructor-dashboard",
-  "/instructor-dashboard",
-];
-
+// Apphel─
 function App() {
-  const isLoggedIn = !!localStorage.getItem("user_data");
-
   return (
     <BrowserRouter>
-      <AppInner isLoggedIn={isLoggedIn} />
+      <AppShell />
     </BrowserRouter>
   );
 }
 
-// Inner component so we can use useLocation inside BrowserRouter
-const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
+const AppShell: React.FC = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    () => !!localStorage.getItem("user_data"),
+  );
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "user_data") setIsLoggedIn(!!e.newValue);
+    };
+    const onAuthChange = () =>
+      setIsLoggedIn(!!localStorage.getItem("user_data"));
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("auth-change", onAuthChange);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("auth-change", onAuthChange);
+    };
+  }, []);
+
   const { pathname } = useLocation();
-  const isSelfLayout = SELF_LAYOUT_ROUTES.some((r) => pathname.startsWith(r));
+  const isSelfLayout = SELF_LAYOUT_PREFIXES.some((p) => pathname.startsWith(p));
   const showNavbar = isLoggedIn && !isSelfLayout;
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
       {showNavbar && <Navbar />}
 
-      <main className={showNavbar ? "pt-16" : ""}>
+      <main className={showNavbar ? "pt-[60px]" : ""}>
         <ErrorBoundary>
-          <Suspense fallback={<PageLoader message="Loading page..." />}>
+          <Suspense fallback={<PageLoader message="Loading…" />}>
             <Routes>
-              {/* ── Public ──────────────────────────────────────────── */}
+              {/* PUBLIC */}
               <Route path="/" element={<HomeRouter />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
@@ -197,9 +235,8 @@ const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
               <Route path="/contact" element={<Contact />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/practice" element={<PracticeQuestions />} />
-              <Route path="/parent-dashboard" element={<ParentDashboard />} />
 
-              {/* ── Generic dashboard ───────────────────────────────── */}
+              {/* GENERIC */}
               <Route
                 path="/dashboard"
                 element={
@@ -209,23 +246,25 @@ const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
                 }
               />
 
-              {/* ── Admin dashboards ────────────────────────────────── */}
-              <Route
-                path="/admin-dashboard"
-                element={
-                  <ProtectedRoute requiredPermission="admin.access">
-                    <Page>
-                      <AdminDashboard />
-                    </Page>
-                  </ProtectedRoute>
-                }
-              />
+              {/* SUPER ADMIN */}
               <Route
                 path="/super-admin-portal"
                 element={
                   <ProtectedRoute allowedRoles={["super_admin"]}>
                     <Page>
                       <SuperAdminPortal />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ADMIN */}
+              <Route
+                path="/admin-dashboard"
+                element={
+                  <ProtectedRoute requiredPermission="admin.access">
+                    <Page>
+                      <AdminDashboard />
                     </Page>
                   </ProtectedRoute>
                 }
@@ -238,8 +277,28 @@ const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/manage-users"
+                element={
+                  <ProtectedRoute requiredPermission="user.create">
+                    <Page>
+                      <ManageUsers />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/analytics"
+                element={
+                  <ProtectedRoute requiredPermission="analytics.view">
+                    <Page>
+                      <Analytics />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
 
-              {/* ── Department / school dashboards ──────────────────── */}
+              {/* SCHOOL ADMIN (department) */}
               <Route
                 path="/western-dashboard"
                 element={
@@ -271,29 +330,7 @@ const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
                 }
               />
 
-              {/* ── Student / parent ────────────────────────────────── */}
-              <Route
-                path="/student-dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={["student", "parent"]}>
-                    <Page>
-                      <StudentDashboard />
-                    </Page>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/parent-portal"
-                element={
-                  <ProtectedRoute allowedRoles={["parent"]}>
-                    <Page>
-                      <ParentPortal />
-                    </Page>
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* ── Teacher dashboards (new canonical routes) ───────── */}
+              {/* TEACHER */}
               <Route
                 path="/teacher-dashboard"
                 element={
@@ -324,8 +361,7 @@ const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
                   </ProtectedRoute>
                 }
               />
-
-              {/* ── Legacy instructor routes → redirect to teacher ───── */}
+              {/* Legacy aliases */}
               <Route
                 path="/instructor-dashboard"
                 element={<Navigate to="/teacher-dashboard" replace />}
@@ -339,8 +375,38 @@ const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
                 element={<Navigate to="/class-teacher-dashboard" replace />}
               />
 
-              {/* ── Non-teaching staff ──────────────────────────────── */}
-              {/* StaffDashboard page doesn't exist yet — falls back to /dashboard */}
+              {/* STUDENT */}
+              <Route
+                path="/student-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <Page>
+                      <StudentDashboard />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* PARENT─ */}
+              <Route
+                path="/parent-portal"
+                element={
+                  <ProtectedRoute allowedRoles={["parent"]}>
+                    <Page>
+                      <ParentPortal />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/parent-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["parent"]}>
+                    <Navigate to="/parent-portal" replace />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route
                 path="/staff-dashboard"
                 element={
@@ -351,8 +417,6 @@ const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
                   </ProtectedRoute>
                 }
               />
-
-              {/* ── Visitor ─────────────────────────────────────────── */}
               <Route
                 path="/visitor"
                 element={
@@ -364,7 +428,7 @@ const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
                 }
               />
 
-              {/* ── Core features ───────────────────────────────────── */}
+              {/* FEATURES (authenticated) */}
               <Route
                 path="/courses"
                 element={
@@ -411,16 +475,6 @@ const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
                   <ProtectedRoute requiredPermission="payment.view">
                     <Page>
                       <Payments />
-                    </Page>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/analytics"
-                element={
-                  <ProtectedRoute requiredPermission="analytics.view">
-                    <Page>
-                      <Analytics />
                     </Page>
                   </ProtectedRoute>
                 }
@@ -475,24 +529,15 @@ const AppInner: React.FC<{ isLoggedIn: boolean }> = ({ isLoggedIn }) => {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/manage-users"
-                element={
-                  <ProtectedRoute requiredPermission="user.create">
-                    <Page>
-                      <ManageUsers />
-                    </Page>
-                  </ProtectedRoute>
-                }
-              />
 
-              {/* ── Catch-all ───────────────────────────────────────── */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              {/*  404 */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
         </ErrorBoundary>
       </main>
 
+      {/* Floating global widgets — only when logged in */}
       {isLoggedIn && (
         <>
           <ErrorBoundary fallback={null}>

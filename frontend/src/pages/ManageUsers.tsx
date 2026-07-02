@@ -4,7 +4,7 @@ import api from "../api";
 import BackButton from "../components/BackButton";
 import { getUserData } from "../utils/authUtils";
 
-//  Types 
+//  Types
 interface ApiUser {
   id: number;
   username: string;
@@ -97,7 +97,7 @@ const ROLE_BADGE: Record<string, string> = {
 
 const SUPER_ONLY_ROLES = ["admin", "super_admin"];
 
-//  Action button 
+//  Action button
 const BTN_COLORS: Record<string, string> = {
   blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40",
   amber:
@@ -121,7 +121,7 @@ const Btn: React.FC<{
   </button>
 );
 
-//  Parse DRF errors 
+//  Parse DRF errors
 const parseError = (err: any): string => {
   const data = err?.response?.data;
   if (!data) return err?.message ?? "Unknown error";
@@ -135,12 +135,9 @@ const parseError = (err: any): string => {
   return msgs.join(" · ") || "Request failed";
 };
 
-const inputCls = `w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600
-  rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-  focus:outline-none focus:ring-2 focus:ring-teal-500
-  disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400`;
-const labelCls =
-  "block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1";
+const inputCls = "app-input disabled:opacity-50 disabled:cursor-not-allowed";
+const labelCls = "app-field-label";
+const sectionTitleCls = "app-section-title";
 
 const SUBJECT_OPTIONS: [string, string][] = [
   ["english_language", "English Language"],
@@ -505,18 +502,16 @@ const ManageUsers: React.FC = () => {
 
   // ── Render ──
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-3 sm:p-6">
+    <div className="app-shell p-3 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
           <div>
             <div className="mb-2">
               <BackButton />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              👥 User Management
-            </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <h1 className="app-page-title">👥 User Management</h1>
+            <p className="app-page-subtitle">
               {isSchoolAdmin
                 ? "Managing your department's users"
                 : "Full CRUD — all changes validated server-side"}
@@ -526,26 +521,22 @@ const ManageUsers: React.FC = () => {
             {selected.length > 0 && (
               <button
                 onClick={syncGroups}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300"
+                className="app-btn app-btn-secondary"
               >
                 🔄 Sync ({selected.length})
               </button>
             )}
             <button
               onClick={() => setShowArchived((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors
-                ${
-                  showArchived
-                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-300"
-                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700"
-                }`}
+              className={`app-btn ${
+                showArchived
+                  ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                  : "app-btn-secondary"
+              }`}
             >
               📦 {showArchived ? "Hide Archived" : "Archived"}
             </button>
-            <button
-              onClick={openCreate}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 text-white transition-colors shadow-sm"
-            >
+            <button onClick={openCreate} className="app-btn app-btn-primary">
               ➕ Add User
             </button>
           </div>
@@ -559,12 +550,11 @@ const ManageUsers: React.FC = () => {
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              className={`p-3.5 rounded-xl text-sm font-medium border
-                ${
-                  toast.ok
-                    ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200"
-                    : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200"
-                }`}
+              className={`rounded-2xl border p-3.5 text-sm font-medium ${
+                toast.ok
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                  : "border-rose-500/30 bg-rose-500/10 text-rose-300"
+              }`}
             >
               {toast.ok ? "✅" : "❌"} {toast.msg}
             </motion.div>
@@ -573,7 +563,7 @@ const ManageUsers: React.FC = () => {
 
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
               {
                 label: "Total",
@@ -606,7 +596,7 @@ const ManageUsers: React.FC = () => {
             ].map((s) => (
               <div
                 key={s.label}
-                className={`${s.bg} rounded-xl p-4 flex items-center gap-3`}
+                className={`app-card flex items-center gap-3 p-4 ${s.bg}`}
               >
                 <span className="text-2xl">{s.icon}</span>
                 <div>
@@ -623,7 +613,7 @@ const ManageUsers: React.FC = () => {
         )}
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="app-card flex flex-col gap-3 p-4 sm:flex-row">
           <label className="sr-only" htmlFor="user-search">
             Search users
           </label>
@@ -665,9 +655,9 @@ const ManageUsers: React.FC = () => {
                 className={inputCls + " sm:w-40"}
                 aria-label="Filter by department"
               >
-              <option value="all">All Depts</option>
-              <option value="western">Western</option>
-              <option value="arabic">Arabic</option>
+                <option value="all">All Depts</option>
+                <option value="western">Western</option>
+                <option value="arabic">Arabic</option>
                 <option value="programming">Programming</option>
               </select>
             </>
@@ -675,7 +665,7 @@ const ManageUsers: React.FC = () => {
         </div>
 
         {/* User table */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+        <div className="app-card overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="w-9 h-9 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
@@ -918,15 +908,15 @@ const ManageUsers: React.FC = () => {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.96, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden"
+                className="w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
               >
-                <div className="flex items-center justify-between px-6 py-4 border-b dark:border-gray-700 shrink-0">
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                <div className="flex items-center justify-between shrink-0 border-b border-slate-800 px-6 py-4">
+                  <h2 className="text-lg font-semibold text-white">
                     {editingId ? "✏️ Edit User" : "➕ Create User"}
                   </h2>
                   <button
                     onClick={closeForm}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
                   >
                     ✕
                   </button>
@@ -934,11 +924,11 @@ const ManageUsers: React.FC = () => {
 
                 <form
                   onSubmit={handleSubmit}
-                  className="flex-1 overflow-y-auto px-6 py-5 space-y-6"
+                  className="flex-1 space-y-6 overflow-y-auto px-6 py-5"
                 >
                   {/* Identity */}
                   <div>
-                    <p className={labelCls + " mb-3"}>Identity</p>
+                    <p className={`${labelCls} ${sectionTitleCls}`}>Identity</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className={labelCls}>First Name</label>
@@ -1011,7 +1001,9 @@ const ManageUsers: React.FC = () => {
 
                   {/* Role & School */}
                   <div>
-                    <p className={labelCls + " mb-3"}>Role & School</p>
+                    <p className={`${labelCls} ${sectionTitleCls}`}>
+                      Role & School
+                    </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className={labelCls}>
@@ -1246,7 +1238,9 @@ const ManageUsers: React.FC = () => {
 
                   {/* Additional info */}
                   <div>
-                    <p className={labelCls + " mb-3"}>Additional Info</p>
+                    <p className={`${labelCls} ${sectionTitleCls}`}>
+                      Additional Info
+                    </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className={labelCls}>Phone</label>
@@ -1297,18 +1291,18 @@ const ManageUsers: React.FC = () => {
                   </div>
                 </form>
 
-                <div className="flex gap-3 px-6 py-4 border-t dark:border-gray-700 shrink-0">
+                <div className="flex shrink-0 gap-3 border-t border-slate-800 px-6 py-4">
                   <button
                     type="button"
                     onClick={closeForm}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    className="app-btn app-btn-secondary flex-1"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSubmit as any}
                     disabled={submitting}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 text-white transition-colors"
+                    className="app-btn app-btn-primary flex-1"
                   >
                     {submitting
                       ? "Saving…"

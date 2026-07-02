@@ -37,22 +37,25 @@ const AIChat: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-24 right-6 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 z-50"
+            className="fixed bottom-24 right-6 z-50 w-[22rem] max-w-[calc(100vw-2rem)] rounded-3xl border border-slate-800/80 bg-slate-900/95 p-3 shadow-2xl shadow-slate-950/50 backdrop-blur"
           >
-            <div className="flex items-center justify-between mb-2">
-              <div className="font-bold">AI Tutor</div>
-              <button onClick={() => setOpen(false)} className="text-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-sm font-semibold text-white">AI Tutor</div>
+              <button
+                onClick={() => setOpen(false)}
+                className="rounded-lg p-1.5 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+              >
                 ✖
               </button>
             </div>
-            <div className="h-48 overflow-auto mb-2 space-y-2">
+            <div className="mb-2 h-48 space-y-2 overflow-auto rounded-2xl bg-slate-950/70 p-2">
               {messages.map((m, i) => (
                 <div
                   key={i}
                   className={m.from === "user" ? "text-right" : "text-left"}
                 >
                   <div
-                    className={`inline-block rounded-md px-3 py-1 ${m.from === "user" ? "bg-blue-100 text-blue-800" : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"}`}
+                    className={`inline-block rounded-2xl px-3 py-1.5 text-sm ${m.from === "user" ? "bg-gradient-to-r from-teal-500 to-indigo-600 text-white" : "bg-slate-800 text-slate-200"}`}
                   >
                     {m.text}
                   </div>
@@ -65,12 +68,12 @@ const AIChat: React.FC = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 placeholder="Ask about courses, schedules, or fees..."
-                className="flex-1 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                className="app-input flex-1"
               />
               <button
                 onClick={sendMessage}
                 disabled={loading}
-                className="px-3 py-2 bg-teal-600 text-white rounded-md"
+                className="app-btn app-btn-primary px-3 py-2"
               >
                 {loading ? "…" : "Send"}
               </button>
@@ -82,7 +85,7 @@ const AIChat: React.FC = () => {
       <motion.button
         whileTap={{ scale: 0.95 }}
         onClick={() => setOpen((s) => !s)}
-        className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-teal-500 to-indigo-600 text-white p-3 rounded-full shadow-lg"
+        className="fixed bottom-6 right-6 z-50 rounded-full bg-gradient-to-r from-teal-500 to-indigo-600 p-3 text-white shadow-lg shadow-teal-500/20"
       >
         🤖
       </motion.button>
