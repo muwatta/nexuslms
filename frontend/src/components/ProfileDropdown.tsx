@@ -4,6 +4,7 @@ import useTheme from "../hooks/useTheme";
 import {
   useRolesAndPermissions,
   createRoleLabelsMap,
+  getDepartmentLabel,
 } from "../hooks/useRolesAndPermissions";
 import { getUserData, clearUserData, hasPermission } from "../utils/authUtils";
 
@@ -70,6 +71,9 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
   // Use role label from API data, fallback to role code
   const roleLabel = roleLabelsMap[role] || role || "User";
+  const departmentLabel = department
+    ? getDepartmentLabel(department, rolesData)
+    : null;
 
   const showAdminLink = hasPermission("admin.access");
 
@@ -121,7 +125,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
                   <p
                     className={`text-xs capitalize ${isDark ? "text-slate-400" : "text-slate-500"}`}
                   >
-                    {department.replace("_", " ")} dept.
+                    {departmentLabel?.replace("_", " ") || department} dept.
                   </p>
                 )}
               </div>

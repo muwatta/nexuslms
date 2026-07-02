@@ -7,7 +7,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import api from "../api";
-import { getUserData } from "../utils/authUtils";
+import {
+  getUserData,
+  isAdmin as userIsAdmin,
+  isTeacher as userIsTeacher,
+  isStudent as userIsStudent,
+} from "../utils/authUtils";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -1111,9 +1116,9 @@ const Assignments: React.FC = () => {
   const role = userData?.role ?? "";
   const dept = userData?.department ?? "";
 
-  const isTeacher = role === "teacher" || role === "instructor";
-  const isStudent = role === "student";
-  const isAdmin = ["super_admin", "admin", "school_admin"].includes(role);
+  const isTeacher = userIsTeacher();
+  const isStudent = userIsStudent();
+  const isAdmin = userIsAdmin();
 
   const [toast, setToast] = useState<{ ok: boolean; msg: string } | null>(null);
   const notify = useCallback((ok: boolean, msg: string) => {

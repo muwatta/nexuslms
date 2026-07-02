@@ -50,6 +50,10 @@ function getCachedData(): RolesAndPermissionsData | null {
   }
 }
 
+export function getCachedRolesAndPermissions(): RolesAndPermissionsData | null {
+  return getCachedData();
+}
+
 /**
  * Set cache in localStorage
  */

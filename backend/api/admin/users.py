@@ -292,7 +292,7 @@ class CustomUserAdmin(BaseUserAdmin):
                             if normalized_dept is None:
                                 # Warn but still create the user
                                 import_stats["dept_warnings"].append(
-                                    f"Row {row_num}: '{dept}' not recognized. User created with empty department; fix in UI."
+                                    f"Row {row_num}: '{dept}' not recognized. User created with empty department and will appear as Unassigned; fix in UI."
                                 )
                             elif str(dept).lower().strip() != normalized_dept:
                                 # Successfully normalized

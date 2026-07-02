@@ -1,7 +1,7 @@
 // frontend/src/components/ProtectedRoute.tsx
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { getUserData, hasPermission } from "../utils/authUtils";
+import { getUserData, hasPermission, isAdmin } from "../utils/authUtils";
 
 interface ProtectedRouteProps {
   children: React.ReactElement;
@@ -29,8 +29,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // 2. Permission-based guard (preferred for new routes)
   if (requiredPermission) {
-    const isGlobalAdmin = role === "admin" || role === "super_admin";
-    return isGlobalAdmin || hasPermission(requiredPermission) ? (
+    return isAdmin() || hasPermission(requiredPermission) ? (
       children
     ) : (
       <Navigate to="/unauthorized" replace />

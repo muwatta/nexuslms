@@ -2,7 +2,12 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import api from "../api";
-import { getUserData } from "../utils/authUtils";
+import {
+  getUserData,
+  isAdmin as userIsAdmin,
+  isTeacher as userIsTeacher,
+  isStudent as userIsStudent,
+} from "../utils/authUtils";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Payment {
@@ -35,8 +40,8 @@ const fmt = (n: number) =>
 const Payments: React.FC = () => {
   const userData = getUserData();
   const role = userData?.role ?? "";
-  const isAdmin = ["super_admin", "admin", "school_admin"].includes(role);
-  const isTeacher = role === "teacher" || role === "instructor";
+  const isAdmin = userIsAdmin();
+  const isTeacher = userIsTeacher();
 
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);

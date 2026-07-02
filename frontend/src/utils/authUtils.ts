@@ -1,6 +1,10 @@
 // frontend/src/utils/authUtils.ts
 
 import api from "../api";
+import {
+  getCachedRolesAndPermissions,
+  getRolePermissions,
+} from "../hooks/useRolesAndPermissions";
 
 export interface UserData {
   id: number;
@@ -517,7 +521,11 @@ export function resolvePermissions(
   role: string,
   department?: string | null,
 ): string[] {
-  const base = ROLE_PERMISSIONS[role] ?? [];
+  const cachedRoles = getCachedRolesAndPermissions();
+  const livePermissions = cachedRoles
+    ? getRolePermissions(role, cachedRoles)
+    : undefined;
+  const base = livePermissions ?? ROLE_PERMISSIONS[role] ?? [];
 
   if (role === "school_admin" && department) {
     return [
@@ -573,8 +581,24 @@ export function isAdmin(): boolean {
   return hasRole("admin", "school_admin", "super_admin");
 }
 
+export function isSuperAdmin(): boolean {
+  return hasRole("super_admin");
+}
+
+export function isSchoolAdmin(): boolean {
+  return hasRole("school_admin");
+}
+
 export function isTeacher(): boolean {
-  return hasRole("teacher");
+  return hasRole("teacher", "instructor");
+}
+
+export function isStudent(): boolean {
+  return hasRole("student");
+}
+
+export function isParent(): boolean {
+  return hasRole("parent");
 }
 
 /** @deprecated use isTeacher() */

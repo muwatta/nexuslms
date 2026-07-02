@@ -27,11 +27,12 @@ interface SystemSnapshot {
   western: DeptStats;
   arabic: DeptStats;
   programming: DeptStats;
+  unassigned: DeptStats;
 }
 interface ProfileRow {
   id: number;
   role: string;
-  department: string;
+  department: string | null;
   student_class?: string;
   user: {
     username: string;
@@ -231,11 +232,17 @@ const SuperAdminPortal: React.FC = () => {
           courses: programmingCourses.length,
           enrollments: 0,
         },
+        unassigned: {
+          students: 0,
+          instructors: 0,
+          courses: 0,
+          enrollments: 0,
+        },
       };
 
       profiles.forEach((p) => {
-        const d = p.department as keyof SystemSnapshot;
-        if (!d || !snap[d]) return;
+        const d = (p.department || "unassigned") as keyof SystemSnapshot;
+        if (!snap[d]) return;
         if (p.role === "student") snap[d].students++;
         if (["instructor", "teacher"].includes(p.role)) snap[d].instructors++;
       });
@@ -243,11 +250,9 @@ const SuperAdminPortal: React.FC = () => {
       enrollments.forEach((e: any) => {
         const courseId = e.course?.id ?? e.course;
         const course = allCourses.find((c: any) => c.id === courseId);
-        if (
-          course?.department &&
-          snap[course.department as keyof SystemSnapshot]
-        ) {
-          snap[course.department as keyof SystemSnapshot].enrollments++;
+        const department = course?.department ?? "unassigned";
+        if (snap[department as keyof SystemSnapshot]) {
+          snap[department as keyof SystemSnapshot].enrollments++;
         }
       });
 
@@ -289,7 +294,14 @@ const SuperAdminPortal: React.FC = () => {
 
   const filtered = allProfiles.filter((p) => {
     if (filterRole !== "all" && p.role !== filterRole) return false;
-    if (filterDept !== "all" && p.department !== filterDept) return false;
+    const departmentValue = p.department?.trim() || null;
+    if (filterDept !== "all") {
+      if (filterDept === "unassigned") {
+        if (departmentValue !== null) return false;
+      } else if (departmentValue !== filterDept) {
+        return false;
+      }
+    }
     const q = userSearch.toLowerCase();
     return (
       !q ||
@@ -675,6 +687,21 @@ const SuperAdminPortal: React.FC = () => {
                       </button>
                     );
                   })}
+                  <button
+                    onClick={() =>
+                      setFilterDept(
+                        filterDept === "unassigned" ? "all" : "unassigned",
+                      )
+                    }
+                    className={`${styles.deptFilterBtn} ${
+                      filterDept === "unassigned"
+                        ? styles.filterPillUnassigned
+                        : ""
+                    }`}
+                  >
+                    ❓ Unassigned:{" "}
+                    {allProfiles.filter((p) => !p.department).length}
+                  </button>
                 </div>
 
                 {/* Filters */}

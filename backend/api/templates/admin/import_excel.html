@@ -1,5 +1,9 @@
 {% extends "admin/base_site.html" %} {% load static %} {% block content %}
 <h1>{{ title }}</h1>
+<p class="description">
+  Upload an Excel file with user rows. Invalid department values are accepted but stored as Unassigned.
+  You can fix those records later in the admin user profile or via the cleanup command.
+</p>
 <form method="post" enctype="multipart/form-data">
   {% csrf_token %} {{ form.as_p }}
   <button type="submit" class="default">Upload</button>
