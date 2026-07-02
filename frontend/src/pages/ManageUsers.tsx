@@ -4,7 +4,7 @@ import api from "../api";
 import BackButton from "../components/BackButton";
 import { getUserData } from "../utils/authUtils";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+//  Types 
 interface ApiUser {
   id: number;
   username: string;
@@ -79,7 +79,7 @@ const BLANK_FORM: FormData = {
   parent_email: "",
 };
 
-// ─── Role badge colours ───────────────────────────────────────────────────────
+//  Role badge colours ─
 const ROLE_BADGE: Record<string, string> = {
   super_admin: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300",
   admin:
@@ -97,7 +97,7 @@ const ROLE_BADGE: Record<string, string> = {
 
 const SUPER_ONLY_ROLES = ["admin", "super_admin"];
 
-// ─── Action button ────────────────────────────────────────────────────────────
+//  Action button 
 const BTN_COLORS: Record<string, string> = {
   blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40",
   amber:
@@ -121,7 +121,7 @@ const Btn: React.FC<{
   </button>
 );
 
-// ─── Parse DRF errors ─────────────────────────────────────────────────────────
+//  Parse DRF errors 
 const parseError = (err: any): string => {
   const data = err?.response?.data;
   if (!data) return err?.message ?? "Unknown error";
@@ -172,7 +172,7 @@ const SUBJECT_OPTIONS: [string, string][] = [
   ["digital_technologies", "Digital Technologies"],
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
+//  Component ─
 const ManageUsers: React.FC = () => {
   const callerData = getUserData();
   const callerRole = callerData?.role ?? "";
@@ -205,7 +205,7 @@ const ManageUsers: React.FC = () => {
     setTimeout(() => setToast(null), 4500);
   };
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
+  // ── Fetch ──
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -234,7 +234,7 @@ const ManageUsers: React.FC = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // ── Class choices ──────────────────────────────────────────────────────────
+  // ── Class choices ─
   useEffect(() => {
     const dept = form.department || callerDept;
     api
@@ -251,7 +251,7 @@ const ManageUsers: React.FC = () => {
       .catch(() => {});
   }, [form.department, form.role, callerDept]);
 
-  // ── Form helpers ───────────────────────────────────────────────────────────
+  // ── Form helpers ──
   const handleInput = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -316,7 +316,7 @@ const ManageUsers: React.FC = () => {
     setEditingId(null);
   };
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
+  // Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -429,7 +429,7 @@ const ManageUsers: React.FC = () => {
     }
   };
 
-  // ── Delete / Archive / Password ────────────────────────────────────────────
+  // Delete / Archive / Password
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     const target = deleteTarget;
@@ -503,7 +503,7 @@ const ManageUsers: React.FC = () => {
   const canDelete = (p: UserProfile) =>
     isSuperAdmin || !SUPER_ONLY_ROLES.includes(p.role);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ──
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-3 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-5">
@@ -624,16 +624,25 @@ const ManageUsers: React.FC = () => {
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-2">
+          <label className="sr-only" htmlFor="user-search">
+            Search users
+          </label>
           <input
+            id="user-search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="🔍  Search name, username, email, student ID…"
             className={`${inputCls} flex-1`}
           />
+          <label className="sr-only" htmlFor="filter-role">
+            Filter by role
+          </label>
           <select
+            id="filter-role"
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
             className={inputCls + " sm:w-40"}
+            aria-label="Filter by role"
           >
             <option value="all">All Roles</option>
             <option value="student">Students</option>
@@ -645,16 +654,23 @@ const ManageUsers: React.FC = () => {
             <option value="visitor">Visitors</option>
           </select>
           {!isSchoolAdmin && (
-            <select
-              value={filterDept}
-              onChange={(e) => setFilterDept(e.target.value)}
-              className={inputCls + " sm:w-40"}
-            >
+            <>
+              <label className="sr-only" htmlFor="filter-department">
+                Filter by department
+              </label>
+              <select
+                id="filter-department"
+                value={filterDept}
+                onChange={(e) => setFilterDept(e.target.value)}
+                className={inputCls + " sm:w-40"}
+                aria-label="Filter by department"
+              >
               <option value="all">All Depts</option>
               <option value="western">Western</option>
               <option value="arabic">Arabic</option>
-              <option value="programming">Programming</option>
-            </select>
+                <option value="programming">Programming</option>
+              </select>
+            </>
           )}
         </div>
 
@@ -680,6 +696,7 @@ const ManageUsers: React.FC = () => {
                         <input
                           type="checkbox"
                           checked={allSelected}
+                          aria-label="Select all users"
                           onChange={(e) =>
                             setSelected(
                               e.target.checked ? profiles.map((p) => p.id) : [],
@@ -718,6 +735,7 @@ const ManageUsers: React.FC = () => {
                           <input
                             type="checkbox"
                             checked={selected.includes(p.id)}
+                            aria-label={`Select user ${fullName(p.user)}`}
                             onChange={() => toggleSelect(p.id)}
                             className="w-4 h-4 accent-teal-600 cursor-pointer"
                           />
@@ -831,6 +849,7 @@ const ManageUsers: React.FC = () => {
                         checked={selected.includes(p.id)}
                         onChange={() => toggleSelect(p.id)}
                         className="mt-1 w-4 h-4 accent-teal-600 shrink-0"
+                        aria-label={`Select user ${fullName(p.user)}`}
                       />
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500 to-indigo-600 flex items-center justify-center text-white font-bold shrink-0">
                         {initial(p.user)}
@@ -1000,9 +1019,11 @@ const ManageUsers: React.FC = () => {
                         </label>
                         <select
                           name="role"
+                          id="user-role"
                           value={form.role}
                           onChange={handleInput}
                           className={inputCls}
+                          aria-label="User role"
                         >
                           <option value="student">Student</option>
                           <option value="parent">Parent</option>
@@ -1022,10 +1043,12 @@ const ManageUsers: React.FC = () => {
                         <label className={labelCls}>Department</label>
                         <select
                           name="department"
+                          id="user-department"
                           value={form.department}
                           onChange={handleInput}
                           disabled={isSchoolAdmin}
                           className={inputCls}
+                          aria-label="User department"
                         >
                           <option value="western">🌍 Western School</option>
                           <option value="arabic">🕌 Arabic School</option>
@@ -1048,9 +1071,11 @@ const ManageUsers: React.FC = () => {
                             </label>
                             <select
                               name="teacher_type"
+                              id="teacher-type"
                               value={form.teacher_type}
                               onChange={handleInput}
                               className={inputCls}
+                              aria-label="Teacher type"
                             >
                               <option value="">— Select type —</option>
                               <option value="subject">Subject Teacher</option>
@@ -1068,6 +1093,7 @@ const ManageUsers: React.FC = () => {
                                 <span className="text-red-500">*</span>
                               </label>
                               <select
+                                id="teacher-class"
                                 value={form.teacher_class}
                                 onChange={(e) =>
                                   setForm((f) => ({
@@ -1076,6 +1102,7 @@ const ManageUsers: React.FC = () => {
                                   }))
                                 }
                                 className={inputCls}
+                                aria-label="Homeroom class"
                               >
                                 <option value="">— Select class —</option>
                                 {classChoices.map((c) => (
@@ -1100,6 +1127,7 @@ const ManageUsers: React.FC = () => {
                                   <span className="text-red-500">*</span>
                                 </label>
                                 <select
+                                  id="assigned-class"
                                   value={form.teacher_class}
                                   onChange={(e) =>
                                     setForm((f) => ({
@@ -1108,6 +1136,7 @@ const ManageUsers: React.FC = () => {
                                     }))
                                   }
                                   className={inputCls}
+                                  aria-label="Assigned class"
                                 >
                                   <option value="">— Select class —</option>
                                   {classChoices.map((c) => (
@@ -1130,6 +1159,7 @@ const ManageUsers: React.FC = () => {
                                   </span>
                                 </label>
                                 <select
+                                  id="teacher-subjects"
                                   multiple
                                   size={7}
                                   value={form.teacher_subjects}
@@ -1143,6 +1173,7 @@ const ManageUsers: React.FC = () => {
                                     }));
                                   }}
                                   className={inputCls + " h-auto"}
+                                  aria-label="Teacher subjects"
                                 >
                                   {SUBJECT_OPTIONS.map(([val, lbl]) => (
                                     <option key={val} value={val}>
@@ -1174,9 +1205,11 @@ const ManageUsers: React.FC = () => {
                           <label className={labelCls}>Class</label>
                           <select
                             name="student_class"
+                            id="student-class"
                             value={form.student_class}
                             onChange={handleInput}
                             className={inputCls}
+                            aria-label="Student class"
                           >
                             {classChoices.map((c) => (
                               <option key={c.value} value={c.value}>

@@ -35,13 +35,17 @@ class AdminCreateUserSerializer(drf_serializers.Serializer):
         "western", "arabic", "programming",
     ], default="western")
     student_class   = drf_serializers.CharField(required=False, allow_blank=True, max_length=20)
+    teacher_type    = drf_serializers.ChoiceField(
+        choices=["subject", "class", ""], required=False, allow_blank=True
+    )
     instructor_type = drf_serializers.ChoiceField(
         choices=["subject", "class", ""], required=False, allow_blank=True
     )
-    bio          = drf_serializers.CharField(required=False, allow_blank=True)
-    phone        = drf_serializers.CharField(required=False, allow_blank=True, max_length=30)
-    address      = drf_serializers.CharField(required=False, allow_blank=True)
-    parent_email = drf_serializers.EmailField(required=False, allow_blank=True)
+    class_section   = drf_serializers.CharField(required=False, allow_blank=True, max_length=10)
+    bio             = drf_serializers.CharField(required=False, allow_blank=True)
+    phone           = drf_serializers.CharField(required=False, allow_blank=True, max_length=30)
+    address         = drf_serializers.CharField(required=False, allow_blank=True)
+    parent_email    = drf_serializers.EmailField(required=False, allow_blank=True)
 
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
@@ -50,9 +54,16 @@ class AdminCreateUserSerializer(drf_serializers.Serializer):
 
     def validate(self, data):
         role            = data.get("role", "student")
-        instructor_type = data.get("instructor_type", "")
-        student_class   = data.get("student_class", "")
+        teacher_type    = data.get("teacher_type", "") or ""
+        instructor_type = data.get("instructor_type", "") or ""
+        student_class   = data.get("student_class", "") or ""
         department      = data.get("department", "western")
+
+        if role == "teacher" and not teacher_type:
+            return data
+
+        if role == "teacher" and teacher_type:
+            return data
 
         if role == "instructor" and not instructor_type:
             raise drf_serializers.ValidationError(
@@ -62,7 +73,15 @@ class AdminCreateUserSerializer(drf_serializers.Serializer):
             raise drf_serializers.ValidationError(
                 {"instructor_type": "Instructor type can only be set for instructor role."}
             )
-        if role == "student" and student_class and department:
+        if role != "teacher" and teacher_type:
+            raise drf_serializers.ValidationError(
+                {"teacher_type": "Teacher type can only be set for teacher role."}
+            )
+        if role not in {"student", "teacher"} and student_class:
+            raise drf_serializers.ValidationError(
+                {"student_class": "Student class is only valid for student or teacher roles."}
+            )
+        if role in {"student", "teacher"} and student_class and department:
             valid = [c[0] for c in Profile.get_classes_for_department(department)]
             if student_class not in valid:
                 raise drf_serializers.ValidationError(
@@ -83,28 +102,37 @@ class AdminUpdateUserSerializer(drf_serializers.Serializer):
         "western", "arabic", "programming",
     ])
     student_class   = drf_serializers.CharField(required=False, allow_blank=True, max_length=20)
+    teacher_type    = drf_serializers.ChoiceField(
+        choices=["subject", "class", ""], required=False, allow_blank=True
+    )
     instructor_type = drf_serializers.ChoiceField(
         choices=["subject", "class", ""], required=False, allow_blank=True
     )
-    bio          = drf_serializers.CharField(required=False, allow_blank=True)
-    phone        = drf_serializers.CharField(required=False, allow_blank=True, max_length=30)
-    address      = drf_serializers.CharField(required=False, allow_blank=True)
-    parent_email = drf_serializers.EmailField(required=False, allow_blank=True)
-    is_archived  = drf_serializers.BooleanField(required=False)
+    class_section   = drf_serializers.CharField(required=False, allow_blank=True, max_length=10)
+    bio             = drf_serializers.CharField(required=False, allow_blank=True)
+    phone           = drf_serializers.CharField(required=False, allow_blank=True, max_length=30)
+    address         = drf_serializers.CharField(required=False, allow_blank=True)
+    parent_email    = drf_serializers.EmailField(required=False, allow_blank=True)
+    is_archived     = drf_serializers.BooleanField(required=False)
 
     def validate(self, data):
         role            = data.get("role")
-        instructor_type = data.get("instructor_type", "")
-        student_class   = data.get("student_class",   "")
-        department      = data.get("department",       "")
+        teacher_type    = data.get("teacher_type", "") or ""
+        instructor_type = data.get("instructor_type", "") or ""
+        student_class   = data.get("student_class", "") or ""
+        department      = data.get("department", "") or ""
 
         if instructor_type and role and role != "instructor":
             raise drf_serializers.ValidationError(
                 {"instructor_type": "Instructor type is only valid for instructor role."}
             )
-        if student_class and role and role != "student":
+        if teacher_type and role and role != "teacher":
             raise drf_serializers.ValidationError(
-                {"student_class": "Student class is only valid for student role."}
+                {"teacher_type": "Teacher type is only valid for teacher role."}
+            )
+        if student_class and role and role not in {"student", "teacher"}:
+            raise drf_serializers.ValidationError(
+                {"student_class": "Student class is only valid for student or teacher roles."}
             )
         if student_class and department:
             valid = [c[0] for c in Profile.get_classes_for_department(department)]
@@ -280,12 +308,14 @@ class AdminUserViewSet(ModelViewSet):
             profile.role            = d.get("role",            "student")
             profile.department      = d.get("department",      "western")
             profile.student_class   = d.get("student_class")   or None
-            profile.instructor_type = d.get("instructor_type") or None
+            profile.teacher_type    = d.get("teacher_type") or d.get("instructor_type") or None
+            profile.class_section   = d.get("class_section", "") or ""
             profile.bio             = d.get("bio",             "")
             profile.phone           = d.get("phone",           "")
             profile.address         = d.get("address",         "")
             profile.parent_email    = d.get("parent_email",    "")
             profile.save()
+            signals_module.sync_role_to_groups(type(profile), profile, False)
             _log(request, "create", profile, new_values={
                 "username": user.username, "role": profile.role,
                 "department": profile.department,
@@ -339,13 +369,32 @@ class AdminUserViewSet(ModelViewSet):
             if user_dirty:
                 user.save()
 
+            role_value = d.get("role")
+            teacher_type_value = d.pop("teacher_type", None)
+            instructor_type_value = d.pop("instructor_type", None)
+
             for field, value in d.items():
                 setattr(
                     profile, field,
                     value if value != "" else None
-                    if field in ("student_class", "instructor_type") else value
+                    if field in ("student_class", "class_section") else value
                 )
+
+            if role_value is not None:
+                profile.role = role_value
+
+            if role_value not in {"teacher", None}:
+                profile.teacher_type = None
+            elif teacher_type_value is not None:
+                profile.teacher_type = teacher_type_value or None
+            elif instructor_type_value is not None:
+                profile.teacher_type = instructor_type_value or None
+
+            if role_value not in {"student", "teacher"} and "student_class" not in d:
+                profile.student_class = None
+
             profile.save()
+            signals_module.sync_role_to_groups(type(profile), profile, False)
 
             _log(request, "update", profile,
                  old_values=old_values,
