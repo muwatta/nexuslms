@@ -22,6 +22,7 @@ from .views import (
     InstructorResultsViewSet, StudentDashboardView, StudentCourseViewSet,
     StudentEnrollmentViewSet, StudentChatView, AnnouncementListView,
 )
+from .views.subjectassignment import SubjectAssignmentViewSet
 from .views.core import RolesAndPermissionsView
 from .views.permissions_view import PermissionsMeView 
 from .core.models import Profile
@@ -55,6 +56,7 @@ router.register("instructor/assignments", InstructorAssignmentViewSet,        ba
 router.register("instructor/students",    InstructorStudentManagementViewSet, basename="instructor-students")
 router.register("instructor/results",     InstructorResultsViewSet,           basename="instructor-results")
 router.register("parent", ParentDashboardViewSet, basename="parent")
+router.register("subject-assignments",     SubjectAssignmentViewSet,            basename="subject-assignments")
 
 
 

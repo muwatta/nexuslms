@@ -29,45 +29,52 @@ class SubjectAssignmentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        teacher_id = self.request.query_params.get("teacher")
         if getattr(user, "is_superuser", False):
-            return SubjectAssignment.objects.all().select_related(
+            qs = SubjectAssignment.objects.all().select_related(
                 "student", "teacher", "teacher__profile"
             )
+        else:
+            try:
+                role = user.profile.role
+            except AttributeError:
+                return SubjectAssignment.objects.none()
 
-        try:
-            role = user.profile.role
-        except AttributeError:
-            return SubjectAssignment.objects.none()
-
-        if role in ADMIN_ROLES:
-            # School admins see their own department only
-            if role == "school_admin":
-                dept = user.profile.department
-                return SubjectAssignment.objects.filter(
-                    teacher__profile__department=dept
+            if role in ADMIN_ROLES:
+                # School admins see their own department only
+                if role == "school_admin":
+                    dept = user.profile.department
+                    qs = SubjectAssignment.objects.filter(
+                        teacher__profile__department=dept
+                    ).select_related("student", "teacher", "teacher__profile")
+                else:
+                    qs = SubjectAssignment.objects.all().select_related(
+                        "student", "teacher", "teacher__profile"
+                    )
+            elif role == "teacher":
+                qs = SubjectAssignment.objects.filter(
+                    teacher=user
                 ).select_related("student", "teacher", "teacher__profile")
-            return SubjectAssignment.objects.all().select_related(
-                "student", "teacher", "teacher__profile"
-            )
+            elif role == "student":
+                qs = SubjectAssignment.objects.filter(
+                    student=user
+                ).select_related("student", "teacher", "teacher__profile")
+            elif role == "parent":
+                # Parents see assignments for their children
+                # (assuming parent_email linkage — simplified: same department)
+                qs = SubjectAssignment.objects.filter(
+                    student__profile__parent_email=user.email
+                ).select_related("student", "teacher", "teacher__profile")
+            else:
+                return SubjectAssignment.objects.none()
 
-        if role == "teacher":
-            return SubjectAssignment.objects.filter(
-                teacher=user
-            ).select_related("student", "teacher", "teacher__profile")
+        if teacher_id:
+            try:
+                qs = qs.filter(teacher__id=int(teacher_id))
+            except (TypeError, ValueError):
+                pass
 
-        if role == "student":
-            return SubjectAssignment.objects.filter(
-                student=user
-            ).select_related("student", "teacher", "teacher__profile")
-
-        if role == "parent":
-            # Parents see assignments for their children
-            # (assuming parent_email linkage — simplified: same department)
-            return SubjectAssignment.objects.filter(
-                student__profile__parent_email=user.email
-            ).select_related("student", "teacher", "teacher__profile")
-
-        return SubjectAssignment.objects.none()
+        return qs
 
     def get_permissions(self):
         if self.action in ("create", "update", "partial_update", "destroy"):

@@ -1,4 +1,3 @@
-# backend/api/views/user_views.py (create this file if it doesn't exist)
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny

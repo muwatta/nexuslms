@@ -33,7 +33,7 @@ interface UserProfile {
 interface Stats {
   total: number;
   students: number;
-  teachers: number;
+  instructors: number;
   admins: number;
   parents: number;
   non_teaching: number;
@@ -581,7 +581,7 @@ const ManageUsers: React.FC = () => {
               },
               {
                 label: "Teachers",
-                value: stats.teachers,
+                value: stats.instructors,
                 icon: "👨‍🏫",
                 bg: "bg-blue-50 dark:bg-blue-900/20",
                 text: "text-blue-700 dark:text-blue-300",
@@ -1455,14 +1455,13 @@ const ManageUsers: React.FC = () => {
                       🔧 To reassign subjects
                     </p>
                     <div className="space-y-2 text-xs text-blue-600 dark:text-blue-400">
-                      <p>Run the fix command for this teacher:</p>
-                      <code className="block bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded font-mono text-[11px]">
-                        python manage.py fix_ibrahim_assignments --username{" "}
-                        {subjectModal.user.username} --class jss2 --subjects
-                        mathematics english_language
-                      </code>
+                      <p>
+                        This teacher's subject assignments can be updated
+                        through the admin user edit flow.
+                      </p>
                       <p className="mt-2">
-                        Or re-onboard via Edit → change subjects and class.
+                        Contact your administrator to change assigned subjects
+                        or class.
                       </p>
                     </div>
                   </div>
