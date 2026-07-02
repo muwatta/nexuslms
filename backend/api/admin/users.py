@@ -197,6 +197,62 @@ class CustomUserAdmin(BaseUserAdmin):
         normalized = DEPT_MAP.get(dept_lower)
         return normalized
 
+    @staticmethod
+    def _normalize_role(role_value):
+        """
+        Normalize a role value from Excel to valid internal code.
+        
+        Maps common synonyms to correct internal codes.
+        Returns normalized code or None if unrecognized.
+        """
+        if not role_value:
+            return None
+        
+        # Valid internal codes
+        VALID_CODES = {
+            "super_admin",
+            "admin",
+            "school_admin",
+            "teacher",
+            "non_teaching",
+            "student",
+            "parent",
+            "visitor",
+        }
+        
+        # Mapping of common labels/synonyms to codes
+        ROLE_MAP = {
+            "super_admin": "super_admin",
+            "superadmin": "super_admin",
+            "admin": "admin",
+            "administrator": "admin",
+            "school_admin": "school_admin",
+            "school admin": "school_admin",
+            "schooladmin": "school_admin",
+            "teacher": "teacher",
+            "instructor": "teacher",
+            "teaching staff": "teacher",
+            "non_teaching": "non_teaching",
+            "non teaching": "non_teaching",
+            "nonteaching": "non_teaching",
+            "support staff": "non_teaching",
+            "student": "student",
+            "learner": "student",
+            "parent": "parent",
+            "guardian": "parent",
+            "visitor": "visitor",
+        }
+        
+        role_lower = str(role_value).lower().strip()
+        
+        # Check if it's already a valid code
+        if role_lower in VALID_CODES:
+            return role_lower
+        
+        # Try to normalize it
+        normalized = ROLE_MAP.get(role_lower)
+        return normalized
+
     def import_excel(self, request):
         from django import forms
         import openpyxl
@@ -216,9 +272,10 @@ class CustomUserAdmin(BaseUserAdmin):
                     import_stats = {
                         "created": 0,
                         "updated": 0,
-                        "skipped": 0,
                         "dept_normalized": 0,
-                        "dept_errors": [],
+                        "dept_warnings": [],  # Department issues but user still created
+                        "role_normalized": 0,
+                        "role_warnings": [],  # Role issues but user still created
                     }
                     
                     for row_num, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
@@ -228,19 +285,36 @@ class CustomUserAdmin(BaseUserAdmin):
                         if not username:
                             continue
                         
-                        # Normalize department
+                        # Normalize department (but don't skip row if invalid)
                         normalized_dept = None
                         if dept:
                             normalized_dept = self._normalize_department(dept)
                             if normalized_dept is None:
-                                import_stats["dept_errors"].append(
-                                    f"Row {row_num}: '{dept}' is not a recognized department. Skipping."
+                                # Warn but still create the user
+                                import_stats["dept_warnings"].append(
+                                    f"Row {row_num}: '{dept}' not recognized. User created with empty department; fix in UI."
                                 )
-                                import_stats["skipped"] += 1
-                                continue
                             elif str(dept).lower().strip() != normalized_dept:
+                                # Successfully normalized
                                 import_stats["dept_normalized"] += 1
                         
+                        # Normalize role (but don't skip row if invalid)
+                        normalized_role = None
+                        if role:
+                            normalized_role = self._normalize_role(role)
+                            if normalized_role is None:
+                                # Warn but still create the user with default role
+                                import_stats["role_warnings"].append(
+                                    f"Row {row_num}: '{role}' not recognized. User created as student; fix in UI."
+                                )
+                                normalized_role = "student"  # Default fallback
+                            elif str(role).lower().strip() != normalized_role:
+                                # Successfully normalized
+                                import_stats["role_normalized"] += 1
+                        else:
+                            normalized_role = "student"  # Default
+                        
+                        # Always create the user, even if department/role had issues
                         user, created = User.objects.get_or_create(
                             username=username,
                             defaults={
@@ -255,10 +329,8 @@ class CustomUserAdmin(BaseUserAdmin):
                         
                         profile, is_new = Profile.objects.get_or_create(user=user)
                         
-                        if role:
-                            profile.role = role
-                        if normalized_dept:
-                            profile.department = normalized_dept
+                        profile.role = normalized_role
+                        profile.department = normalized_dept  # Can be None
                         if student_cls:
                             profile.student_class = student_cls
                         profile.save()
@@ -268,28 +340,40 @@ class CustomUserAdmin(BaseUserAdmin):
                         else:
                             import_stats["updated"] += 1
                     
-                    # Build user-friendly message
-                    msg_parts = [
+                    # Build comprehensive user-friendly message
+                    msg_parts = []
+                    
+                    # Main result
+                    msg_parts.append(
                         f"✓ Import complete: {import_stats['created']} created, {import_stats['updated']} updated."
-                    ]
+                    )
                     
+                    # Normalizations
+                    normalizations = []
                     if import_stats["dept_normalized"] > 0:
-                        msg_parts.append(
-                            f"📝 {import_stats['dept_normalized']} departments were normalized from Excel labels to internal codes."
-                        )
+                        normalizations.append(f"{import_stats['dept_normalized']} departments normalized")
+                    if import_stats["role_normalized"] > 0:
+                        normalizations.append(f"{import_stats['role_normalized']} roles normalized")
                     
-                    if import_stats["dept_errors"]:
+                    if normalizations:
+                        msg_parts.append(f"📝 {' | '.join(normalizations)}")
+                    
+                    # Warnings
+                    all_warnings = import_stats["dept_warnings"] + import_stats["role_warnings"]
+                    if all_warnings:
                         msg_parts.append(
-                            f"⚠️ {len(import_stats['dept_errors'])} rows skipped due to invalid departments:"
+                            f"⚠️ {len(all_warnings)} fields need review (users created with defaults):"
                         )
-                        for error in import_stats["dept_errors"][:5]:  # Show first 5
-                            msg_parts.append(f"   {error}")
-                        if len(import_stats["dept_errors"]) > 5:
+                        for warning in all_warnings[:5]:  # Show first 5
+                            msg_parts.append(f"   {warning}")
+                        if len(all_warnings) > 5:
                             msg_parts.append(
-                                f"   ... and {len(import_stats['dept_errors']) - 5} more."
+                                f"   ... and {len(all_warnings) - 5} more issues."
                             )
                     
-                    messages.success(request, " ".join(msg_parts))
+                    # Join with newlines for readability
+                    full_message = "\n".join(msg_parts)
+                    messages.success(request, full_message)
                     return redirect("..")
                     
                 except Exception as e:
@@ -300,6 +384,7 @@ class CustomUserAdmin(BaseUserAdmin):
 
         context = {"form": form, "title": "Import users from Excel"}
         return render(request, "admin/import_excel.html", context)
+
 
 
     @admin.display(description="Role", ordering="profile__role")
