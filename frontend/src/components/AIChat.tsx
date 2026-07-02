@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import api from "../api";
 import { motion, AnimatePresence } from "framer-motion";
+import useTheme from "../hooks/useTheme";
 
 const AIChat: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -9,6 +10,7 @@ const AIChat: React.FC = () => {
     Array<{ from: string; text: string }>
   >([]);
   const [loading, setLoading] = useState(false);
+  const { isDark } = useTheme();
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -37,25 +39,31 @@ const AIChat: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-24 right-6 z-50 w-[22rem] max-w-[calc(100vw-2rem)] rounded-3xl border border-slate-800/80 bg-slate-900/95 p-3 shadow-2xl shadow-slate-950/50 backdrop-blur"
+            className={`fixed bottom-24 right-6 z-50 w-[22rem] max-w-[calc(100vw-2rem)] rounded-3xl border p-3 shadow-2xl backdrop-blur ${isDark ? "border-slate-800/80 bg-slate-900/95 text-white shadow-slate-950/50" : "border-slate-200 bg-white/95 text-slate-900 shadow-slate-200/70"}`}
           >
             <div className="mb-2 flex items-center justify-between">
-              <div className="text-sm font-semibold text-white">AI Tutor</div>
+              <div
+                className={`text-sm font-semibold ${isDark ? "text-white" : "text-slate-900"}`}
+              >
+                AI Tutor
+              </div>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-lg p-1.5 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+                className={`rounded-lg p-1.5 text-sm transition-colors ${isDark ? "text-slate-400 hover:bg-slate-800 hover:text-white" : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"}`}
               >
                 ✖
               </button>
             </div>
-            <div className="mb-2 h-48 space-y-2 overflow-auto rounded-2xl bg-slate-950/70 p-2">
+            <div
+              className={`mb-2 h-48 space-y-2 overflow-auto rounded-2xl p-2 ${isDark ? "bg-slate-950/70" : "bg-slate-50"}`}
+            >
               {messages.map((m, i) => (
                 <div
                   key={i}
                   className={m.from === "user" ? "text-right" : "text-left"}
                 >
                   <div
-                    className={`inline-block rounded-2xl px-3 py-1.5 text-sm ${m.from === "user" ? "bg-gradient-to-r from-teal-500 to-indigo-600 text-white" : "bg-slate-800 text-slate-200"}`}
+                    className={`inline-block rounded-2xl px-3 py-1.5 text-sm ${m.from === "user" ? "bg-gradient-to-r from-teal-500 to-indigo-600 text-white" : isDark ? "bg-slate-800 text-slate-200" : "bg-slate-200 text-slate-700"}`}
                   >
                     {m.text}
                   </div>

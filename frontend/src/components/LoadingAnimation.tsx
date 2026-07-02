@@ -1,5 +1,6 @@
 // frontend/src/components/Navbar.tsx
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import useTheme from "../hooks/useTheme";
 import {
   handleLogout,
   getUserData,
@@ -197,9 +198,7 @@ function buildNav(
 
 // ─────────────────────────────────────────────────────────────────────────────
 const Navbar: React.FC = () => {
-  const [darkMode, setDarkMode] = useState(
-    () => localStorage.getItem("dark_mode") === "true",
-  );
+  const { isDark, toggleTheme } = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [liveUser, setLiveUser] = useState<any>(() => getUserData());
@@ -269,11 +268,7 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener("storage", h);
   }, []);
 
-  // Dark mode
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-    localStorage.setItem("dark_mode", String(darkMode));
-  }, [darkMode]);
+  // theme handled by useTheme()
 
   // Close drawer on outside click
   useEffect(() => {
@@ -479,7 +474,7 @@ const Navbar: React.FC = () => {
               </>
             )}
             <button
-              onClick={() => setDarkMode((p) => !p)}
+              onClick={toggleTheme}
               title="Toggle dark mode"
               style={{
                 width: "36px",
@@ -494,7 +489,7 @@ const Navbar: React.FC = () => {
                 justifyContent: "center",
               }}
             >
-              {darkMode ? "🌙" : "☀️"}
+              {isDark ? "🌙" : "☀️"}
             </button>
           </div>
         </div>
@@ -637,7 +632,7 @@ const Navbar: React.FC = () => {
                     onMouseEnter={(e) => {
                       if (!anyActive)
                         (e.currentTarget as HTMLElement).style.background =
-                          darkMode ? "#1f2937" : "#f9fafb";
+                          isDark ? "#1f2937" : "#f9fafb";
                     }}
                     onMouseLeave={(e) => {
                       if (!anyActive)
@@ -688,7 +683,7 @@ const Navbar: React.FC = () => {
                               if (!active)
                                 (
                                   e.currentTarget as HTMLElement
-                                ).style.background = darkMode
+                                ).style.background = isDark
                                   ? "#1f2937"
                                   : "#f9fafb";
                             }}
@@ -729,7 +724,7 @@ const Navbar: React.FC = () => {
                 style={linkStyle(active)}
                 onMouseEnter={(e) => {
                   if (!active)
-                    (e.currentTarget as HTMLElement).style.background = darkMode
+                    (e.currentTarget as HTMLElement).style.background = isDark
                       ? "#1f2937"
                       : "#f9fafb";
                 }}

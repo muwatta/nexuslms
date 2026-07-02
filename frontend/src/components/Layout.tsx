@@ -1,5 +1,6 @@
 // components/Layout.tsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
+import useTheme from "../hooks/useTheme";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sun, Moon, ArrowLeft, GraduationCap } from "lucide-react";
@@ -17,16 +18,7 @@ const Layout: React.FC<LayoutProps> = ({
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== "undefined") {
-      return (
-        localStorage.getItem("theme") === "dark" ||
-        (!localStorage.getItem("theme") &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches)
-      );
-    }
-    return false;
-  });
+  const { isDark, toggleTheme } = useTheme();
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -38,17 +30,7 @@ const Layout: React.FC<LayoutProps> = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [isDark]);
-
-  const toggleTheme = () => setIsDark(!isDark);
+  // theme handled by `useTheme` hook
 
   const navLinks = [
     { href: "/#programs", label: "Programs" },

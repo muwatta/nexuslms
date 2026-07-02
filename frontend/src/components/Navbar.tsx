@@ -1,5 +1,6 @@
 // frontend/src/components/Navbar.tsx
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import useTheme from "../hooks/useTheme";
 import {
   handleLogout,
   getUserData,
@@ -20,7 +21,7 @@ interface NavItem {
   divider?: boolean;
 }
 
-// ── Role-based nav builder ──
+// Role-based nav builder
 function buildNav(role: string): NavItem[] {
   const isTeacher = role === "teacher" || role === "instructor";
   const isStudent = role === "student";
@@ -169,7 +170,7 @@ function buildNav(role: string): NavItem[] {
   ];
 }
 
-// ── Dept accent colours ──
+// Dept accent colours
 const DEPT_ACCENT: Record<string, { from: string; to: string }> = {
   western: { from: "#1d4ed8", to: "#0ea5e9" },
   arabic: { from: "#065f46", to: "#10b981" },
@@ -177,9 +178,7 @@ const DEPT_ACCENT: Record<string, { from: string; to: string }> = {
 };
 
 const Navbar: React.FC = () => {
-  const [darkMode, setDarkMode] = useState<boolean>(
-    localStorage.getItem("dark_mode") === "true",
-  );
+  const { isDark, toggleTheme } = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [liveUser, setLiveUser] = useState<any>(() => getUserData());
@@ -257,11 +256,7 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener("storage", h);
   }, []);
 
-  // Dark mode
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-    localStorage.setItem("dark_mode", String(darkMode));
-  }, [darkMode]);
+  // theme is handled by useTheme()
 
   // Close drawer on outside click
   useEffect(() => {
@@ -322,8 +317,8 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      {/* ── Top bar ── */}
-      {/* ── Top bar ── */}
+      {/* Top bar */}
+      {/* Top bar */}
       <nav
         className={styles.navbar}
         style={
@@ -365,22 +360,19 @@ const Navbar: React.FC = () => {
                 </Link>
               </>
             )}
-            <button
-              onClick={() => setDarkMode((p) => !p)}
-              className={styles.darkToggle}
-            >
-              {darkMode ? "🌙" : "☀️"}
+            <button onClick={toggleTheme} className={styles.darkToggle}>
+              {isDark ? "🌙" : "☀️"}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* ── Backdrop ── */}
+      {/* Backdrop */}
       {drawerOpen && (
         <div className={styles.backdrop} onClick={() => setDrawerOpen(false)} />
       )}
 
-      {/* ── Drawer ── */}
+      {/* Drawer */}
       {/* stylelint-disable-next-line */}
       {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
       {/* @ts-ignore */}

@@ -1,17 +1,6 @@
-// frontend/src/components/ProfileDropdown.tsx
-//
-// Changes from previous version:
-//  1. No more API call — reads from getUserData() (localStorage) only.
-//     Navbar already fetches /profiles/me/ and writes to localStorage,
-//     so this component just consumes that data. Zero duplicate requests.
-//  2. Dead routes /settings and /help replaced with working routes:
-//     /profile and /ai (Help → AI Help which exists in App.tsx)
-//  3. Role display now handles all roles including school_admin / parent
-//  4. Permissions-aware admin link: shows "Admin Panel" only if user
-//     has admin.access permission
-
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import useTheme from "../hooks/useTheme";
 import { getUserData, clearUserData, hasPermission } from "../utils/authUtils";
 
 interface ProfileDropdownProps {
@@ -34,13 +23,11 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { isDark } = useTheme();
 
-  // ── Read from localStorage — no API call needed here ────────────────────
-  // Navbar fetches /profiles/me/ once per session and writes to localStorage.
-  // Re-read on every open so we always show the latest data.
   const userData = getUserData();
 
-  // ── Close on outside click ────────────────────────────────────────────────
+  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (
@@ -56,11 +43,11 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
   const handleLogout = () => {
     clearUserData();
-    sessionStorage.removeItem("navbar_profile_fetched"); // allow re-fetch on next login
+    sessionStorage.removeItem("navbar_profile_fetched");
     navigate("/login");
   };
 
-  // ── Derived display values ────────────────────────────────────────────────
+  // Derived display values
   const firstName = userData?.firstName || userData?.first_name || "";
   const lastName = userData?.lastName || userData?.last_name || "";
   const username = userData?.username || "";
@@ -82,19 +69,17 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
   const roleLabel = ROLE_LABELS[role] ?? "User";
 
-  // Show "Admin Panel" link only for roles with admin.access permission
   const showAdminLink = hasPermission("admin.access");
 
   if (!userData) return null;
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* ── Trigger button ─────────────────────────────────────────────── */}
+      {/* Trigger button  */}
       <button
         onClick={() => setIsOpen((prev) => !prev)}
         className="flex items-center space-x-2 text-white hover:bg-white/20 px-3 py-2 rounded-full transition-colors"
         title="Profile Menu"
-        aria-expanded={isOpen}
         aria-haspopup="true"
       >
         <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-semibold">
@@ -106,24 +91,34 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
         <span className="text-xs opacity-70">{isOpen ? "▲" : "▼"}</span>
       </button>
 
-      {/* ── Dropdown panel ─────────────────────────────────────────────── */}
+      {/* Dropdown panel */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50">
+        <div
+          className={`absolute right-0 mt-2 w-64 rounded-lg shadow-xl border z-50 ${isDark ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"}`}
+        >
           {/* User info header */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div
+            className={`p-4 border-b ${isDark ? "border-slate-700" : "border-slate-200"}`}
+          >
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                 {initials}
               </div>
               <div className="min-w-0">
-                <p className="font-semibold text-gray-900 dark:text-white truncate">
+                <p
+                  className={`font-semibold truncate ${isDark ? "text-white" : "text-slate-900"}`}
+                >
                   {displayName}
                 </p>
-                <p className="text-sm text-teal-600 dark:text-teal-400">
+                <p
+                  className={`text-sm ${isDark ? "text-teal-400" : "text-teal-600"}`}
+                >
                   {roleLabel}
                 </p>
                 {department && (
-                  <p className="text-xs text-gray-400 capitalize">
+                  <p
+                    className={`text-xs capitalize ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                  >
                     {department.replace("_", " ")} dept.
                   </p>
                 )}
@@ -136,6 +131,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
             <DropdownItem
               icon="👤"
               label="My Profile"
+              isDark={isDark}
               onClick={() => {
                 setIsOpen(false);
                 onProfileClick?.();
@@ -145,6 +141,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
             <DropdownItem
               icon="🤖"
               label="AI Help"
+              isDark={isDark}
               onClick={() => {
                 setIsOpen(false);
                 navigate("/ai");
@@ -154,6 +151,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
               <DropdownItem
                 icon="⚙️"
                 label="Admin Dashboard"
+                isDark={isDark}
                 onClick={() => {
                   setIsOpen(false);
                   navigate("/admin-dashboard");
@@ -164,6 +162,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
               <DropdownItem
                 icon="👥"
                 label="Manage Users"
+                isDark={isDark}
                 onClick={() => {
                   setIsOpen(false);
                   navigate("/manage-users");
@@ -173,10 +172,12 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
           </div>
 
           {/* Logout */}
-          <div className="border-t border-gray-200 dark:border-gray-700 py-2">
+          <div
+            className={`border-t py-2 ${isDark ? "border-slate-700" : "border-slate-200"}`}
+          >
             <button
               onClick={handleLogout}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center space-x-2"
+              className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center space-x-2 ${isDark ? "text-red-400 hover:bg-red-900/20" : "text-red-600 hover:bg-red-50"}`}
             >
               <span>🚪</span>
               <span>Logout</span>
@@ -188,15 +189,15 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   );
 };
 
-// ── Small helper so each menu item isn't repeated ─────────────────────────────
 const DropdownItem: React.FC<{
   icon: string;
   label: string;
+  isDark: boolean;
   onClick: () => void;
-}> = ({ icon, label, onClick }) => (
+}> = ({ icon, label, isDark, onClick }) => (
   <button
     onClick={onClick}
-    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+    className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center space-x-2 ${isDark ? "text-slate-300 hover:bg-slate-700" : "text-slate-700 hover:bg-slate-100"}`}
   >
     <span>{icon}</span>
     <span>{label}</span>

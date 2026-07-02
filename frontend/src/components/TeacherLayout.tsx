@@ -270,10 +270,12 @@ const TeacherLayout: React.FC<TeacherLayoutProps> = ({
         >
           <div className="flex items-center gap-3">
             <button
+              type="button"
               onClick={() => {
                 setCollapsed((v) => !v);
                 setMobileOpen((v) => !v);
               }}
+              aria-label="Toggle sidebar"
               className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
             >
               <div className="space-y-1">
