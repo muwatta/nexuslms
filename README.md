@@ -1,26 +1,26 @@
 # NexusLMS
 
-NexusLMS is a full-stack learning management system for managing schools, courses, users, assessments, payments, and reporting. The project combines a Django REST API backend with a React + Vite frontend and includes a dedicated super-admin experience for user and role management.
+NexusLMS is a modern learning management system designed for schools and educational institutions. It combines a Django REST API backend with a React + Vite frontend to support roles such as super admin, school admin, teacher, student, parent, and non-teaching staff.
 
 ## Overview
 
-The platform currently supports:
+The platform already provides a strong foundation for school operations, including:
 
-- multi-role access for super admins, school admins, instructors, students, and parents
-- user and profile management from the app UI, not only from Django admin
-- department-based dashboards and school views
-- course enrollment and academic workflows
-- quizzes, assignments, and reporting
-- payment handling with Paystack integration
-- audit logging and role-group synchronization
+- multi-role authentication and dashboard routing
+- user creation, profile management, and role assignment from the app UI
+- school/department-based dashboards
+- course and enrollment workflows
+- assignments, quizzes, and academic reporting
+- payments with Paystack integration
+- audit-style visibility and role-group synchronization
 
 ## Project structure
 
 ```text
-backend/        # Django REST API and business logic
-frontend/       # React + TypeScript + Vite client
+backend/        # Django REST API, models, services, and permissions
+frontend/       # React + TypeScript + Vite client and UI pages
 docker/         # Docker Compose and deployment assets
-docs/           # Product and API documentation
+docs/           # Product, architecture, and API documentation
 ```
 
 ## Tech stack
@@ -29,36 +29,37 @@ docs/           # Product and API documentation
 - Frontend: React, TypeScript, Vite, Tailwind CSS, Framer Motion
 - Database: SQLite for local development, PostgreSQL-ready for production
 - APIs: DRF, DRF Spectacular, CORS support
-- Integrations: Paystack, PDF generation, analytics charts
+- Integrations: Paystack, PDF generation, and analytics views
 
-## Current capabilities
+## Current status
 
-### Admin and user management
+### Completed areas
 
-- super-admin portal with department overview and quick actions
-- user management UI for creating and updating users
-- role-based access and group synchronization
-- audit log visibility for key actions
+- role-based access and dashboard routing
+- super-admin portal with management actions
+- in-app user management and role updates
+- teacher, student, and admin dashboard experiences
+- payment and academic workflow integration
+- modernized frontend UI with a more consistent design system
 
-### Learning workflows
+### What is still left to do
 
-- course and enrollment management
-- assessments and quiz flow
-- instructor/student dashboards
-- analytics and reporting surfaces
+To make NexusLMS feel fully production-ready, the next priorities are:
 
-### Payments and infrastructure
-
-- Paystack payment integration
-- Docker-based deployment setup
-- environment-driven configuration for backend services
+- stronger automated testing across backend and frontend
+- richer notifications and communications (email, SMS, announcements)
+- more advanced analytics and reporting exports
+- improved assessment tools such as timed quizzes and grading workflows
+- better mobile experience and accessibility polish
+- deeper integrations with external tools like SSO, video conferencing, and payment providers
+- performance hardening and deployment optimization for real-world scale
 
 ## Prerequisites
 
 - Python 3.11+
 - Node.js 18+
 - npm or yarn
-- (optional) Docker Compose
+- Docker Compose (optional)
 
 ## Backend setup
 
@@ -101,10 +102,18 @@ docker compose up --build
 
 ## Notes
 
-- The frontend and backend are designed to work together as a single product experience.
-- The admin experience has been expanded so many settings can be managed from the UI instead of relying only on Django admin.
-- The project includes both local development tooling and deployment assets for containerized use.
+- The frontend and backend are designed to work together as one product experience.
+- Many administrative settings can now be handled from the UI rather than relying only on Django admin.
+- The project includes both development tooling and deployment assets for local and container-based setup.
+
+## Suggested next roadmap
+
+1. Finish end-to-end testing for major user flows.
+2. Expand reporting and analytics dashboards.
+3. Improve communication and notification systems.
+4. Refine teacher and student workflows for daily classroom use.
+5. Prepare the system for a smoother production rollout.
 
 ## Contact
 
-For questions or collaboration, contact the project maintainer through the repository or the contact details in the project history.
+For questions, collaboration, or feedback, contact the project maintainer through the repository or the project history.

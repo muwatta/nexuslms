@@ -1,8 +1,6 @@
 // frontend/src/utils/authUtils.ts
 
-
 import api from "../api";
-
 
 export interface UserData {
   id: number;
@@ -394,6 +392,7 @@ export function getSubjectsForStream(
 
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
   super_admin: [
+    "admin.access",
     "course.view",
     "course.create",
     "course.edit",
@@ -425,6 +424,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "teacher.assign",
   ],
   admin: [
+    "admin.access",
     "course.view",
     "course.create",
     "course.edit",

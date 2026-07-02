@@ -29,7 +29,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // 2. Permission-based guard (preferred for new routes)
   if (requiredPermission) {
-    return hasPermission(requiredPermission) ? (
+    const isGlobalAdmin = role === "admin" || role === "super_admin";
+    return isGlobalAdmin || hasPermission(requiredPermission) ? (
       children
     ) : (
       <Navigate to="/unauthorized" replace />
