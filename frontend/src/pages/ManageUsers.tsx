@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../api";
-import BackButton from "../components/BackButton";
+import Layout from "../components/Layout";
 import { getUserData } from "../utils/authUtils";
 
 //  Types
@@ -502,624 +502,603 @@ const ManageUsers: React.FC = () => {
 
   // ── Render ──
   return (
-    <div className="app-shell p-3 sm:p-6">
-      <div className="max-w-7xl mx-auto space-y-5">
-        {/* Header */}
-        <div className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
-          <div>
-            <div className="mb-2">
-              <BackButton />
+    <Layout showBackButton>
+      <div className="app-shell p-3 sm:p-6">
+        <div className="max-w-7xl mx-auto space-y-5">
+          {/* Header */}
+          <div className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
+            <div>
+              <h1 className="app-page-title">👥 User Management</h1>
+              <p className="app-page-subtitle">
+                {isSchoolAdmin
+                  ? "Managing your department's users"
+                  : "Full CRUD — all changes validated server-side"}
+              </p>
             </div>
-            <h1 className="app-page-title">👥 User Management</h1>
-            <p className="app-page-subtitle">
-              {isSchoolAdmin
-                ? "Managing your department's users"
-                : "Full CRUD — all changes validated server-side"}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 sm:mt-8">
-            {selected.length > 0 && (
+            <div className="flex flex-wrap gap-2 sm:mt-8">
+              {selected.length > 0 && (
+                <button
+                  onClick={syncGroups}
+                  className="app-btn app-btn-secondary"
+                >
+                  🔄 Sync ({selected.length})
+                </button>
+              )}
               <button
-                onClick={syncGroups}
-                className="app-btn app-btn-secondary"
+                onClick={() => setShowArchived((v) => !v)}
+                className={`app-btn ${
+                  showArchived
+                    ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                    : "app-btn-secondary"
+                }`}
               >
-                🔄 Sync ({selected.length})
+                📦 {showArchived ? "Hide Archived" : "Archived"}
               </button>
+              <button onClick={openCreate} className="app-btn app-btn-primary">
+                ➕ Add User
+              </button>
+            </div>
+          </div>
+
+          {/* Toast */}
+          <AnimatePresence>
+            {toast && (
+              <motion.div
+                key="toast"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                className={`rounded-2xl border p-3.5 text-sm font-medium ${
+                  toast.ok
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                    : "border-rose-500/30 bg-rose-500/10 text-rose-300"
+                }`}
+              >
+                {toast.ok ? "✅" : "❌"} {toast.msg}
+              </motion.div>
             )}
-            <button
-              onClick={() => setShowArchived((v) => !v)}
-              className={`app-btn ${
-                showArchived
-                  ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
-                  : "app-btn-secondary"
-              }`}
-            >
-              📦 {showArchived ? "Hide Archived" : "Archived"}
-            </button>
-            <button onClick={openCreate} className="app-btn app-btn-primary">
-              ➕ Add User
-            </button>
-          </div>
-        </div>
+          </AnimatePresence>
 
-        {/* Toast */}
-        <AnimatePresence>
-          {toast && (
-            <motion.div
-              key="toast"
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className={`rounded-2xl border p-3.5 text-sm font-medium ${
-                toast.ok
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                  : "border-rose-500/30 bg-rose-500/10 text-rose-300"
-              }`}
-            >
-              {toast.ok ? "✅" : "❌"} {toast.msg}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Stats */}
-        {stats && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              {
-                label: "Total",
-                value: stats.total,
-                icon: "👥",
-                bg: "bg-slate-100 dark:bg-slate-800",
-                text: "text-slate-700 dark:text-slate-200",
-              },
-              {
-                label: "Students",
-                value: stats.students,
-                icon: "🎓",
-                bg: "bg-green-50 dark:bg-green-900/20",
-                text: "text-green-700 dark:text-green-300",
-              },
-              {
-                label: "Teachers",
-                value: stats.instructors,
-                icon: "👨‍🏫",
-                bg: "bg-blue-50 dark:bg-blue-900/20",
-                text: "text-blue-700 dark:text-blue-300",
-              },
-              {
-                label: "Admins",
-                value: stats.admins,
-                icon: "⚙️",
-                bg: "bg-red-50 dark:bg-red-900/20",
-                text: "text-red-700 dark:text-red-300",
-              },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className={`app-card flex items-center gap-3 p-4 ${s.bg}`}
-              >
-                <span className="text-2xl">{s.icon}</span>
-                <div>
-                  <p className={`text-2xl font-bold leading-none ${s.text}`}>
-                    {s.value}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    {s.label}
-                  </p>
+          {/* Stats */}
+          {stats && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                {
+                  label: "Total",
+                  value: stats.total,
+                  icon: "👥",
+                  bg: "bg-slate-100 dark:bg-slate-800",
+                  text: "text-slate-700 dark:text-slate-200",
+                },
+                {
+                  label: "Students",
+                  value: stats.students,
+                  icon: "🎓",
+                  bg: "bg-green-50 dark:bg-green-900/20",
+                  text: "text-green-700 dark:text-green-300",
+                },
+                {
+                  label: "Instructors",
+                  value: stats.instructors,
+                  icon: "👨‍🏫",
+                  bg: "bg-blue-50 dark:bg-blue-900/20",
+                  text: "text-blue-700 dark:text-blue-300",
+                },
+                {
+                  label: "Admins",
+                  value: stats.admins,
+                  icon: "⚙️",
+                  bg: "bg-red-50 dark:bg-red-900/20",
+                  text: "text-red-700 dark:text-red-300",
+                },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  className={`app-card flex items-center gap-3 p-4 ${s.bg}`}
+                >
+                  <span className="text-2xl">{s.icon}</span>
+                  <div>
+                    <p className={`text-2xl font-bold leading-none ${s.text}`}>
+                      {s.value}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {s.label}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="app-card flex flex-col gap-3 p-4 sm:flex-row">
-          <label className="sr-only" htmlFor="user-search">
-            Search users
-          </label>
-          <input
-            id="user-search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="🔍  Search name, username, email, student ID…"
-            className={`${inputCls} flex-1`}
-          />
-          <label className="sr-only" htmlFor="filter-role">
-            Filter by role
-          </label>
-          <select
-            id="filter-role"
-            value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
-            className={inputCls + " sm:w-40"}
-            aria-label="Filter by role"
-          >
-            <option value="all">All Roles</option>
-            <option value="student">Students</option>
-            <option value="teacher">Teachers</option>
-            <option value="non_teaching">Non-Teaching Staff</option>
-            <option value="school_admin">School Admins</option>
-            <option value="admin">Admins</option>
-            <option value="parent">Parents</option>
-            <option value="visitor">Visitors</option>
-          </select>
-          {!isSchoolAdmin && (
-            <>
-              <label className="sr-only" htmlFor="filter-department">
-                Filter by department
-              </label>
-              <select
-                id="filter-department"
-                value={filterDept}
-                onChange={(e) => setFilterDept(e.target.value)}
-                className={inputCls + " sm:w-40"}
-                aria-label="Filter by department"
-              >
-                <option value="all">All Depts</option>
-                <option value="western">Western</option>
-                <option value="arabic">Arabic</option>
-                <option value="programming">Programming</option>
-              </select>
-            </>
+              ))}
+            </div>
           )}
-        </div>
 
-        {/* User table */}
-        <div className="app-card overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="w-9 h-9 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : profiles.length === 0 ? (
-            <div className="text-center py-20 text-gray-400 dark:text-gray-500">
-              <p className="text-3xl mb-2">👤</p>
-              <p className="text-sm">No users match your filters</p>
-            </div>
-          ) : (
-            <>
-              {/* Desktop */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-gray-700 text-xs uppercase">
-                    <tr>
-                      <th className="px-4 py-3 w-8">
-                        <input
-                          type="checkbox"
-                          checked={allSelected}
-                          aria-label="Select all users"
-                          onChange={(e) =>
-                            setSelected(
-                              e.target.checked ? profiles.map((p) => p.id) : [],
-                            )
-                          }
-                          className="w-4 h-4 accent-teal-600 cursor-pointer"
-                        />
-                      </th>
-                      {[
-                        "Name & Email",
-                        "Username",
-                        "Role",
-                        "Dept",
-                        "Class / Type",
-                        "ID",
-                        "Actions",
-                      ].map((h) => (
-                        <th
-                          key={h}
-                          className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap"
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                    {profiles.map((p) => (
-                      <motion.tr
-                        key={p.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${p.is_archived ? "opacity-40" : ""}`}
-                      >
-                        <td className="px-4 py-3">
+          {/* Filters */}
+          <div className="app-card flex flex-col gap-3 p-4 sm:flex-row">
+            <label className="sr-only" htmlFor="user-search">
+              Search users
+            </label>
+            <input
+              id="user-search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="🔍  Search name, username, email, student ID…"
+              className={`${inputCls} flex-1`}
+            />
+            <label className="sr-only" htmlFor="filter-role">
+              Filter by role
+            </label>
+            <select
+              id="filter-role"
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className={inputCls + " sm:w-40"}
+              aria-label="Filter by role"
+            >
+              <option value="all">All Roles</option>
+              <option value="student">Students</option>
+              <option value="teacher">Teachers</option>
+              <option value="non_teaching">Non-Teaching Staff</option>
+              <option value="school_admin">School Admins</option>
+              <option value="admin">Admins</option>
+              <option value="parent">Parents</option>
+              <option value="visitor">Visitors</option>
+            </select>
+            {!isSchoolAdmin && (
+              <>
+                <label className="sr-only" htmlFor="filter-department">
+                  Filter by department
+                </label>
+                <select
+                  id="filter-department"
+                  value={filterDept}
+                  onChange={(e) => setFilterDept(e.target.value)}
+                  className={inputCls + " sm:w-40"}
+                  aria-label="Filter by department"
+                >
+                  <option value="all">All Depts</option>
+                  <option value="western">Western</option>
+                  <option value="arabic">Arabic</option>
+                  <option value="programming">Programming</option>
+                </select>
+              </>
+            )}
+          </div>
+
+          {/* User table */}
+          <div className="app-card overflow-hidden">
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-9 h-9 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : profiles.length === 0 ? (
+              <div className="text-center py-20 text-gray-400 dark:text-gray-500">
+                <p className="text-3xl mb-2">👤</p>
+                <p className="text-sm">No users match your filters</p>
+              </div>
+            ) : (
+              <>
+                {/* Desktop */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 dark:bg-gray-700 text-xs uppercase">
+                      <tr>
+                        <th className="px-4 py-3 w-8">
                           <input
                             type="checkbox"
-                            checked={selected.includes(p.id)}
-                            aria-label={`Select user ${fullName(p.user)}`}
-                            onChange={() => toggleSelect(p.id)}
+                            checked={allSelected}
+                            aria-label="Select all users"
+                            onChange={(e) =>
+                              setSelected(
+                                e.target.checked
+                                  ? profiles.map((p) => p.id)
+                                  : [],
+                              )
+                            }
                             className="w-4 h-4 accent-teal-600 cursor-pointer"
                           />
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
-                              {initial(p.user)}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-medium text-gray-900 dark:text-white truncate">
-                                {fullName(p.user)}
-                              </p>
-                              <p className="text-xs text-gray-400 truncate">
-                                {p.user.email || "—"}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-                          @{p.user.username}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[p.role] ?? "bg-gray-100 text-gray-700"}`}
+                        </th>
+                        {[
+                          "Name & Email",
+                          "Username",
+                          "Role",
+                          "Dept",
+                          "Class / Type",
+                          "ID",
+                          "Actions",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap"
                           >
-                            {p.role.replace(/_/g, " ")}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400 capitalize">
-                          {p.department ?? "—"}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">
-                          {p.role === "teacher" ? (
-                            p.teacher_type === "class" ? (
-                              <span className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-semibold">
-                                Class Teacher{" "}
-                                {p.student_class
-                                  ? `— ${p.student_class.toUpperCase().replace(/_/g, " ")}`
-                                  : "(no class)"}
-                              </span>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                      {profiles.map((p) => (
+                        <motion.tr
+                          key={p.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${p.is_archived ? "opacity-40" : ""}`}
+                        >
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              checked={selected.includes(p.id)}
+                              aria-label={`Select user ${fullName(p.user)}`}
+                              onChange={() => toggleSelect(p.id)}
+                              className="w-4 h-4 accent-teal-600 cursor-pointer"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                                {initial(p.user)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-900 dark:text-white truncate">
+                                  {fullName(p.user)}
+                                </p>
+                                <p className="text-xs text-gray-400 truncate">
+                                  {p.user.email || "—"}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                            @{p.user.username}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[p.role] ?? "bg-gray-100 text-gray-700"}`}
+                            >
+                              {p.role.replace(/_/g, " ")}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 dark:text-gray-400 capitalize">
+                            {p.department ?? "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                            {p.role === "teacher" ? (
+                              p.teacher_type === "class" ? (
+                                <span className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-semibold">
+                                  Class Teacher{" "}
+                                  {p.student_class
+                                    ? `— ${p.student_class.toUpperCase().replace(/_/g, " ")}`
+                                    : "(no class)"}
+                                </span>
+                              ) : (
+                                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-semibold">
+                                  Subject Teacher
+                                </span>
+                              )
+                            ) : p.student_class ? (
+                              p.class_section ? (
+                                `${p.student_class} (${p.class_section})`
+                              ) : (
+                                p.student_class
+                              )
                             ) : (
-                              <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-semibold">
-                                Subject Teacher
-                              </span>
-                            )
-                          ) : p.student_class ? (
-                            p.class_section ? (
-                              `${p.student_class} (${p.class_section})`
-                            ) : (
-                              p.student_class
-                            )
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td className="px-4 py-3 font-mono text-xs text-gray-400">
-                          {p.student_id ?? "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1 flex-nowrap">
-                            {canEdit(p) && (
-                              <Btn color="blue" onClick={() => openEdit(p)}>
-                                ✏️
-                              </Btn>
+                              "—"
                             )}
-                            {p.role === "teacher" &&
-                              p.teacher_type !== "class" && (
-                                <Btn
-                                  color="indigo"
-                                  onClick={() => openSubjectAssign(p)}
-                                >
-                                  📚
+                          </td>
+                          <td className="px-4 py-3 font-mono text-xs text-gray-400">
+                            {p.student_id ?? "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1 flex-nowrap">
+                              {canEdit(p) && (
+                                <Btn color="blue" onClick={() => openEdit(p)}>
+                                  ✏️
                                 </Btn>
                               )}
+                              {p.role === "teacher" &&
+                                p.teacher_type !== "class" && (
+                                  <Btn
+                                    color="indigo"
+                                    onClick={() => openSubjectAssign(p)}
+                                  >
+                                    📚
+                                  </Btn>
+                                )}
+                              <Btn
+                                color="amber"
+                                onClick={() => resetPassword(p)}
+                              >
+                                🔑
+                              </Btn>
+                              <Btn
+                                color="orange"
+                                onClick={() => toggleArchive(p)}
+                              >
+                                {p.is_archived ? "♻️" : "📦"}
+                              </Btn>
+                              {canDelete(p) && (
+                                <Btn
+                                  color="red"
+                                  onClick={() => setDeleteTarget(p)}
+                                >
+                                  🗑️
+                                </Btn>
+                              )}
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="md:hidden divide-y dark:divide-gray-700">
+                  {profiles.map((p) => (
+                    <div
+                      key={p.id}
+                      className={`p-4 ${p.is_archived ? "opacity-40" : ""}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(p.id)}
+                          onChange={() => toggleSelect(p.id)}
+                          className="mt-1 w-4 h-4 accent-teal-600 shrink-0"
+                          aria-label={`Select user ${fullName(p.user)}`}
+                        />
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500 to-indigo-600 flex items-center justify-center text-white font-bold shrink-0">
+                          {initial(p.user)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                              {fullName(p.user)}
+                            </p>
+                            <span
+                              className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[p.role] ?? "bg-gray-100 text-gray-700"}`}
+                            >
+                              {p.role.replace(/_/g, " ")}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            @{p.user.username}
+                            {p.department && ` · ${p.department}`}
+                            {p.student_class && ` · ${p.student_class}`}
+                          </p>
+                          {p.user.email && (
+                            <p className="text-xs text-gray-400 truncate">
+                              {p.user.email}
+                            </p>
+                          )}
+                          <div className="flex gap-1.5 mt-2.5 flex-wrap">
+                            {canEdit(p) && (
+                              <Btn color="blue" onClick={() => openEdit(p)}>
+                                ✏️ Edit
+                              </Btn>
+                            )}
                             <Btn color="amber" onClick={() => resetPassword(p)}>
-                              🔑
+                              🔑 Pwd
                             </Btn>
                             <Btn
                               color="orange"
                               onClick={() => toggleArchive(p)}
                             >
-                              {p.is_archived ? "♻️" : "📦"}
+                              {p.is_archived ? "♻️ Restore" : "📦 Archive"}
                             </Btn>
                             {canDelete(p) && (
                               <Btn
                                 color="red"
                                 onClick={() => setDeleteTarget(p)}
                               >
-                                🗑️
+                                🗑️ Delete
                               </Btn>
                             )}
                           </div>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile cards */}
-              <div className="md:hidden divide-y dark:divide-gray-700">
-                {profiles.map((p) => (
-                  <div
-                    key={p.id}
-                    className={`p-4 ${p.is_archived ? "opacity-40" : ""}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(p.id)}
-                        onChange={() => toggleSelect(p.id)}
-                        className="mt-1 w-4 h-4 accent-teal-600 shrink-0"
-                        aria-label={`Select user ${fullName(p.user)}`}
-                      />
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500 to-indigo-600 flex items-center justify-center text-white font-bold shrink-0">
-                        {initial(p.user)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">
-                            {fullName(p.user)}
-                          </p>
-                          <span
-                            className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[p.role] ?? "bg-gray-100 text-gray-700"}`}
-                          >
-                            {p.role.replace(/_/g, " ")}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          @{p.user.username}
-                          {p.department && ` · ${p.department}`}
-                          {p.student_class && ` · ${p.student_class}`}
-                        </p>
-                        {p.user.email && (
-                          <p className="text-xs text-gray-400 truncate">
-                            {p.user.email}
-                          </p>
-                        )}
-                        <div className="flex gap-1.5 mt-2.5 flex-wrap">
-                          {canEdit(p) && (
-                            <Btn color="blue" onClick={() => openEdit(p)}>
-                              ✏️ Edit
-                            </Btn>
-                          )}
-                          <Btn color="amber" onClick={() => resetPassword(p)}>
-                            🔑 Pwd
-                          </Btn>
-                          <Btn color="orange" onClick={() => toggleArchive(p)}>
-                            {p.is_archived ? "♻️ Restore" : "📦 Archive"}
-                          </Btn>
-                          {canDelete(p) && (
-                            <Btn color="red" onClick={() => setDeleteTarget(p)}>
-                              🗑️ Delete
-                            </Btn>
-                          )}
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* CREATE / EDIT MODAL */}
-        <AnimatePresence>
-          {showForm && (
-            <motion.div
-              key="form-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
-              onClick={closeForm}
-            >
-              <motion.div
-                initial={{ scale: 0.96, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.96, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
-              >
-                <div className="flex items-center justify-between shrink-0 border-b border-slate-800 px-6 py-4">
-                  <h2 className="text-lg font-semibold text-white">
-                    {editingId ? "✏️ Edit User" : "➕ Create User"}
-                  </h2>
-                  <button
-                    onClick={closeForm}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
-                  >
-                    ✕
-                  </button>
+                  ))}
                 </div>
+              </>
+            )}
+          </div>
 
-                <form
-                  onSubmit={handleSubmit}
-                  className="flex-1 space-y-6 overflow-y-auto px-6 py-5"
+          {/* CREATE / EDIT MODAL */}
+          <AnimatePresence>
+            {showForm && (
+              <motion.div
+                key="form-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
+                onClick={closeForm}
+              >
+                <motion.div
+                  initial={{ scale: 0.96, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.96, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
                 >
-                  {/* Identity */}
-                  <div>
-                    <p className={`${labelCls} ${sectionTitleCls}`}>Identity</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className={labelCls}>First Name</label>
-                        <input
-                          name="first_name"
-                          value={form.first_name}
-                          onChange={handleInput}
-                          placeholder="Fatima"
-                          className={inputCls}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>Last Name</label>
-                        <input
-                          name="last_name"
-                          value={form.last_name}
-                          onChange={handleInput}
-                          placeholder="Al-Rashid"
-                          className={inputCls}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>
-                          Username <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          name="username"
-                          value={form.username}
-                          onChange={handleInput}
-                          required
-                          disabled={!!editingId}
-                          placeholder="fatima123"
-                          className={inputCls}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>Email</label>
-                        <input
-                          name="email"
-                          type="email"
-                          value={form.email}
-                          onChange={handleInput}
-                          placeholder="user@example.com"
-                          className={inputCls}
-                        />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className={labelCls}>
-                          {editingId ? (
-                            "New Password — leave blank to keep current"
-                          ) : (
-                            <>
-                              <>Password</>{" "}
-                              <span className="text-red-500">*</span>
-                            </>
-                          )}
-                        </label>
-                        <input
-                          name="password"
-                          type="password"
-                          value={form.password}
-                          onChange={handleInput}
-                          required={!editingId}
-                          placeholder="Min 6 characters"
-                          className={inputCls}
-                        />
-                      </div>
-                    </div>
+                  <div className="flex items-center justify-between shrink-0 border-b border-slate-800 px-6 py-4">
+                    <h2 className="text-lg font-semibold text-white">
+                      {editingId ? "✏️ Edit User" : "➕ Create User"}
+                    </h2>
+                    <button
+                      onClick={closeForm}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+                    >
+                      ✕
+                    </button>
                   </div>
 
-                  {/* Role & School */}
-                  <div>
-                    <p className={`${labelCls} ${sectionTitleCls}`}>
-                      Role & School
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className={labelCls}>
-                          Role <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          name="role"
-                          id="user-role"
-                          value={form.role}
-                          onChange={handleInput}
-                          className={inputCls}
-                          aria-label="User role"
-                        >
-                          <option value="student">Student</option>
-                          <option value="parent">Parent</option>
-                          <option value="teacher">Teacher</option>
-                          <option value="non_teaching">
-                            Non-Teaching Staff
-                          </option>
-                          <option value="visitor">Visitor</option>
-                          <option value="school_admin">School Admin</option>
-                          {isSuperAdmin && <option value="admin">Admin</option>}
-                          {isSuperAdmin && (
-                            <option value="super_admin">Super Admin</option>
+                  <form
+                    onSubmit={handleSubmit}
+                    className="flex-1 space-y-6 overflow-y-auto px-6 py-5"
+                  >
+                    {/* Identity */}
+                    <div>
+                      <p className={`${labelCls} ${sectionTitleCls}`}>
+                        Identity
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className={labelCls}>First Name</label>
+                          <input
+                            name="first_name"
+                            value={form.first_name}
+                            onChange={handleInput}
+                            placeholder="Fatima"
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Last Name</label>
+                          <input
+                            name="last_name"
+                            value={form.last_name}
+                            onChange={handleInput}
+                            placeholder="Al-Rashid"
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <label className={labelCls}>
+                            Username <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            name="username"
+                            value={form.username}
+                            onChange={handleInput}
+                            required
+                            disabled={!!editingId}
+                            placeholder="fatima123"
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Email</label>
+                          <input
+                            name="email"
+                            type="email"
+                            value={form.email}
+                            onChange={handleInput}
+                            placeholder="user@example.com"
+                            className={inputCls}
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className={labelCls}>
+                            {editingId ? (
+                              "New Password — leave blank to keep current"
+                            ) : (
+                              <>
+                                <>Password</>{" "}
+                                <span className="text-red-500">*</span>
+                              </>
+                            )}
+                          </label>
+                          <input
+                            name="password"
+                            type="password"
+                            value={form.password}
+                            onChange={handleInput}
+                            required={!editingId}
+                            placeholder="Min 6 characters"
+                            className={inputCls}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Role & School */}
+                    <div>
+                      <p className={`${labelCls} ${sectionTitleCls}`}>
+                        Role & School
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className={labelCls}>
+                            Role <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="role"
+                            id="user-role"
+                            value={form.role}
+                            onChange={handleInput}
+                            className={inputCls}
+                            aria-label="User role"
+                          >
+                            <option value="student">Student</option>
+                            <option value="parent">Parent</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="non_teaching">
+                              Non-Teaching Staff
+                            </option>
+                            <option value="visitor">Visitor</option>
+                            <option value="school_admin">School Admin</option>
+                            {isSuperAdmin && (
+                              <option value="admin">Admin</option>
+                            )}
+                            {isSuperAdmin && (
+                              <option value="super_admin">Super Admin</option>
+                            )}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={labelCls}>Department</label>
+                          <select
+                            name="department"
+                            id="user-department"
+                            value={form.department}
+                            onChange={handleInput}
+                            disabled={isSchoolAdmin}
+                            className={inputCls}
+                            aria-label="User department"
+                          >
+                            <option value="western">🌍 Western School</option>
+                            <option value="arabic">🕌 Arabic School</option>
+                            <option value="programming">💻 Programming</option>
+                          </select>
+                          {isSchoolAdmin && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              Locked to your department
+                            </p>
                           )}
-                        </select>
-                      </div>
-                      <div>
-                        <label className={labelCls}>Department</label>
-                        <select
-                          name="department"
-                          id="user-department"
-                          value={form.department}
-                          onChange={handleInput}
-                          disabled={isSchoolAdmin}
-                          className={inputCls}
-                          aria-label="User department"
-                        >
-                          <option value="western">🌍 Western School</option>
-                          <option value="arabic">🕌 Arabic School</option>
-                          <option value="programming">💻 Programming</option>
-                        </select>
-                        {isSchoolAdmin && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            Locked to your department
-                          </p>
-                        )}
-                      </div>
+                        </div>
 
-                      {form.role === "teacher" && (
-                        <>
-                          {/* Teacher Type */}
-                          <div>
-                            <label className={labelCls}>
-                              Teacher Type{" "}
-                              <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                              name="teacher_type"
-                              id="teacher-type"
-                              value={form.teacher_type}
-                              onChange={handleInput}
-                              className={inputCls}
-                              aria-label="Teacher type"
-                            >
-                              <option value="">— Select type —</option>
-                              <option value="subject">Subject Teacher</option>
-                              <option value="class">
-                                Class Teacher (Homeroom)
-                              </option>
-                            </select>
-                          </div>
-
-                          {/* Class Teacher */}
-                          {form.teacher_type === "class" && (
+                        {form.role === "teacher" && (
+                          <>
+                            {/* Teacher Type */}
                             <div>
                               <label className={labelCls}>
-                                Homeroom Class{" "}
+                                Teacher Type{" "}
                                 <span className="text-red-500">*</span>
                               </label>
                               <select
-                                id="teacher-class"
-                                value={form.teacher_class}
-                                onChange={(e) =>
-                                  setForm((f) => ({
-                                    ...f,
-                                    teacher_class: e.target.value,
-                                  }))
-                                }
+                                name="teacher_type"
+                                id="teacher-type"
+                                value={form.teacher_type}
+                                onChange={handleInput}
                                 className={inputCls}
-                                aria-label="Homeroom class"
+                                aria-label="Teacher type"
                               >
-                                <option value="">— Select class —</option>
-                                {classChoices.map((c) => (
-                                  <option key={c.value} value={c.value}>
-                                    {c.label}
-                                  </option>
-                                ))}
+                                <option value="">— Select type —</option>
+                                <option value="subject">Subject Teacher</option>
+                                <option value="class">
+                                  Class Teacher (Homeroom)
+                                </option>
                               </select>
-                              <p className="text-[10px] text-gray-400 mt-1">
-                                Responsible for all students in this class. Can
-                                review results and generate report cards.
-                              </p>
                             </div>
-                          )}
 
-                          {/* Subject Teacher */}
-                          {form.teacher_type === "subject" && (
-                            <>
+                            {/* Class Teacher */}
+                            {form.teacher_type === "class" && (
                               <div>
                                 <label className={labelCls}>
-                                  Assigned Class{" "}
+                                  Homeroom Class{" "}
                                   <span className="text-red-500">*</span>
                                 </label>
                                 <select
-                                  id="assigned-class"
+                                  id="teacher-class"
                                   value={form.teacher_class}
                                   onChange={(e) =>
                                     setForm((f) => ({
@@ -1128,7 +1107,7 @@ const ManageUsers: React.FC = () => {
                                     }))
                                   }
                                   className={inputCls}
-                                  aria-label="Assigned class"
+                                  aria-label="Homeroom class"
                                 >
                                   <option value="">— Select class —</option>
                                   {classChoices.map((c) => (
@@ -1138,348 +1117,385 @@ const ManageUsers: React.FC = () => {
                                   ))}
                                 </select>
                                 <p className="text-[10px] text-gray-400 mt-1">
-                                  The class this teacher teaches their
-                                  subject(s) in.
+                                  Responsible for all students in this class.
+                                  Can review results and generate report cards.
                                 </p>
                               </div>
-                              <div className="sm:col-span-2">
-                                <label className={labelCls}>
-                                  Subject(s){" "}
-                                  <span className="text-red-500">*</span>
-                                  <span className="ml-1 text-[10px] text-gray-400 font-normal">
-                                    (hold Ctrl/Cmd for multiple)
-                                  </span>
-                                </label>
-                                <select
-                                  id="teacher-subjects"
-                                  multiple
-                                  size={7}
-                                  value={form.teacher_subjects}
-                                  onChange={(e) => {
-                                    const sel = Array.from(
-                                      e.target.selectedOptions,
-                                    ).map((o) => o.value);
-                                    setForm((f) => ({
-                                      ...f,
-                                      teacher_subjects: sel,
-                                    }));
-                                  }}
-                                  className={inputCls + " h-auto"}
-                                  aria-label="Teacher subjects"
-                                >
-                                  {SUBJECT_OPTIONS.map(([val, lbl]) => (
-                                    <option key={val} value={val}>
-                                      {lbl}
-                                    </option>
-                                  ))}
-                                </select>
-                                {form.teacher_subjects.length > 0 && (
-                                  <p className="text-[11px] text-blue-600 dark:text-blue-400 mt-1 font-medium">
-                                    ✅ {form.teacher_subjects.length} subject
-                                    {form.teacher_subjects.length !== 1
-                                      ? "s"
-                                      : ""}{" "}
-                                    selected: {form.teacher_subjects.join(", ")}
+                            )}
+
+                            {/* Subject Teacher */}
+                            {form.teacher_type === "subject" && (
+                              <>
+                                <div>
+                                  <label className={labelCls}>
+                                    Assigned Class{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  <select
+                                    id="assigned-class"
+                                    value={form.teacher_class}
+                                    onChange={(e) =>
+                                      setForm((f) => ({
+                                        ...f,
+                                        teacher_class: e.target.value,
+                                      }))
+                                    }
+                                    className={inputCls}
+                                    aria-label="Assigned class"
+                                  >
+                                    <option value="">— Select class —</option>
+                                    {classChoices.map((c) => (
+                                      <option key={c.value} value={c.value}>
+                                        {c.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <p className="text-[10px] text-gray-400 mt-1">
+                                    The class this teacher teaches their
+                                    subject(s) in.
                                   </p>
-                                )}
-                                <p className="text-[10px] text-gray-400 mt-0.5">
-                                  Students in the selected class will be
-                                  assigned to this teacher for these subjects.
-                                </p>
-                              </div>
-                            </>
-                          )}
-                        </>
-                      )}
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <label className={labelCls}>
+                                    Subject(s){" "}
+                                    <span className="text-red-500">*</span>
+                                    <span className="ml-1 text-[10px] text-gray-400 font-normal">
+                                      (hold Ctrl/Cmd for multiple)
+                                    </span>
+                                  </label>
+                                  <select
+                                    id="teacher-subjects"
+                                    multiple
+                                    size={7}
+                                    value={form.teacher_subjects}
+                                    onChange={(e) => {
+                                      const sel = Array.from(
+                                        e.target.selectedOptions,
+                                      ).map((o) => o.value);
+                                      setForm((f) => ({
+                                        ...f,
+                                        teacher_subjects: sel,
+                                      }));
+                                    }}
+                                    className={inputCls + " h-auto"}
+                                    aria-label="Teacher subjects"
+                                  >
+                                    {SUBJECT_OPTIONS.map(([val, lbl]) => (
+                                      <option key={val} value={val}>
+                                        {lbl}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  {form.teacher_subjects.length > 0 && (
+                                    <p className="text-[11px] text-blue-600 dark:text-blue-400 mt-1 font-medium">
+                                      ✅ {form.teacher_subjects.length} subject
+                                      {form.teacher_subjects.length !== 1
+                                        ? "s"
+                                        : ""}{" "}
+                                      selected:{" "}
+                                      {form.teacher_subjects.join(", ")}
+                                    </p>
+                                  )}
+                                  <p className="text-[10px] text-gray-400 mt-0.5">
+                                    Students in the selected class will be
+                                    assigned to this teacher for these subjects.
+                                  </p>
+                                </div>
+                              </>
+                            )}
+                          </>
+                        )}
 
-                      {form.role === "student" && (
-                        <div>
-                          <label className={labelCls}>Class</label>
-                          <select
-                            name="student_class"
-                            id="student-class"
-                            value={form.student_class}
-                            onChange={handleInput}
-                            className={inputCls}
-                            aria-label="Student class"
-                          >
-                            {classChoices.map((c) => (
-                              <option key={c.value} value={c.value}>
-                                {c.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                      {form.role === "student" && (
-                        <div>
-                          <label className={labelCls}>
-                            Section{" "}
-                            <span className="ml-1 text-[10px] text-gray-400 font-normal">
-                              (optional)
-                            </span>
-                          </label>
-                          <input
-                            name="class_section"
-                            value={form.class_section}
-                            onChange={handleInput}
-                            placeholder="e.g. A  or  leave blank"
-                            maxLength={10}
-                            className={inputCls}
-                          />
-                          <p className="text-[10px] text-gray-400 mt-1">
-                            Sections are organisational only. Same subjects for
-                            all sections of a class.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Additional info */}
-                  <div>
-                    <p className={`${labelCls} ${sectionTitleCls}`}>
-                      Additional Info
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className={labelCls}>Phone</label>
-                        <input
-                          name="phone"
-                          value={form.phone}
-                          onChange={handleInput}
-                          placeholder="+234…"
-                          className={inputCls}
-                        />
-                      </div>
-                      {form.role === "student" && (
-                        <div>
-                          <label className={labelCls}>Parent Email</label>
-                          <input
-                            name="parent_email"
-                            type="email"
-                            value={form.parent_email}
-                            onChange={handleInput}
-                            placeholder="parent@example.com"
-                            className={inputCls}
-                          />
-                        </div>
-                      )}
-                      <div className="sm:col-span-2">
-                        <label className={labelCls}>Address</label>
-                        <textarea
-                          name="address"
-                          value={form.address}
-                          onChange={handleInput}
-                          rows={2}
-                          placeholder="Street, City…"
-                          className={inputCls + " resize-none"}
-                        />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className={labelCls}>Bio</label>
-                        <textarea
-                          name="bio"
-                          value={form.bio}
-                          onChange={handleInput}
-                          rows={2}
-                          placeholder="Short bio…"
-                          className={inputCls + " resize-none"}
-                        />
+                        {form.role === "student" && (
+                          <div>
+                            <label className={labelCls}>Class</label>
+                            <select
+                              name="student_class"
+                              id="student-class"
+                              value={form.student_class}
+                              onChange={handleInput}
+                              className={inputCls}
+                              aria-label="Student class"
+                            >
+                              {classChoices.map((c) => (
+                                <option key={c.value} value={c.value}>
+                                  {c.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        {form.role === "student" && (
+                          <div>
+                            <label className={labelCls}>
+                              Section{" "}
+                              <span className="ml-1 text-[10px] text-gray-400 font-normal">
+                                (optional)
+                              </span>
+                            </label>
+                            <input
+                              name="class_section"
+                              value={form.class_section}
+                              onChange={handleInput}
+                              placeholder="e.g. A  or  leave blank"
+                              maxLength={10}
+                              className={inputCls}
+                            />
+                            <p className="text-[10px] text-gray-400 mt-1">
+                              Sections are organisational only. Same subjects
+                              for all sections of a class.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                </form>
 
-                <div className="flex shrink-0 gap-3 border-t border-slate-800 px-6 py-4">
-                  <button
-                    type="button"
-                    onClick={closeForm}
-                    className="app-btn app-btn-secondary flex-1"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSubmit as any}
-                    disabled={submitting}
-                    className="app-btn app-btn-primary flex-1"
-                  >
-                    {submitting
-                      ? "Saving…"
-                      : editingId
-                        ? "💾 Save Changes"
-                        : "✨ Create User"}
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* DELETE CONFIRM MODAL */}
-        <AnimatePresence>
-          {deleteTarget && (
-            <motion.div
-              key="delete-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-              onClick={() => setDeleteTarget(null)}
-            >
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center"
-              >
-                <div className="text-5xl mb-3">⚠️</div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                  Delete User?
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                  Permanently delete{" "}
-                  <strong className="text-gray-900 dark:text-white">
-                    @{deleteTarget.user.username}
-                  </strong>{" "}
-                  and all their data?{" "}
-                  <span className="text-red-500 font-medium">
-                    This cannot be undone.
-                  </span>
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setDeleteTarget(null)}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmDelete}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors"
-                  >
-                    🗑️ Delete Forever
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* SUBJECT ASSIGNMENT MODAL */}
-        <AnimatePresence>
-          {subjectModal && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-              onClick={() => setSubjectModal(null)}
-            >
-              <motion.div
-                initial={{ scale: 0.95 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
-              >
-                <div className="flex items-center justify-between px-6 py-4 border-b dark:border-gray-700">
-                  <div>
-                    <h2 className="font-black text-gray-900 dark:text-white">
-                      📚 Subject Assignments
-                    </h2>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {subjectModal.user.first_name}{" "}
-                      {subjectModal.user.last_name} · {subjectModal.department}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setSubjectModal(null)}
-                    className="text-gray-400 hover:text-gray-600 text-xl"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                  <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-3">
-                    <span className="text-2xl">📊</span>
+                    {/* Additional info */}
                     <div>
-                      <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300">
-                        {subjectAssigns.length} subject
-                        {subjectAssigns.length !== 1 ? "s" : ""} assigned
+                      <p className={`${labelCls} ${sectionTitleCls}`}>
+                        Additional Info
                       </p>
-                      <p className="text-xs text-indigo-500 dark:text-indigo-400">
-                        Across{" "}
-                        {
-                          Array.from(
-                            new Set(
-                              subjectAssigns
-                                .map((a: any) => a.student_class)
-                                .filter(Boolean),
-                            ),
-                          ).length
-                        }{" "}
-                        class(es)
-                      </p>
-                    </div>
-                  </div>
-
-                  {subjectAssigns.length > 0 && (
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
-                        Current Assignments
-                      </p>
-                      {Array.from(
-                        new Set(
-                          subjectAssigns.map(
-                            (a: any) => a.subject ?? a.course_title ?? "",
-                          ),
-                        ),
-                      ).map((subj: any) => (
-                        <div
-                          key={subj}
-                          className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                        >
-                          <span className="text-green-500 text-sm">✓</span>
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
-                            {subj}
-                          </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className={labelCls}>Phone</label>
+                          <input
+                            name="phone"
+                            value={form.phone}
+                            onChange={handleInput}
+                            placeholder="+234…"
+                            className={inputCls}
+                          />
                         </div>
-                      ))}
+                        {form.role === "student" && (
+                          <div>
+                            <label className={labelCls}>Parent Email</label>
+                            <input
+                              name="parent_email"
+                              type="email"
+                              value={form.parent_email}
+                              onChange={handleInput}
+                              placeholder="parent@example.com"
+                              className={inputCls}
+                            />
+                          </div>
+                        )}
+                        <div className="sm:col-span-2">
+                          <label className={labelCls}>Address</label>
+                          <textarea
+                            name="address"
+                            value={form.address}
+                            onChange={handleInput}
+                            rows={2}
+                            placeholder="Street, City…"
+                            className={inputCls + " resize-none"}
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className={labelCls}>Bio</label>
+                          <textarea
+                            name="bio"
+                            value={form.bio}
+                            onChange={handleInput}
+                            rows={2}
+                            placeholder="Short bio…"
+                            className={inputCls + " resize-none"}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  </form>
 
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4">
-                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
-                      🔧 To reassign subjects
-                    </p>
-                    <div className="space-y-2 text-xs text-blue-600 dark:text-blue-400">
-                      <p>
-                        This teacher's subject assignments can be updated
-                        through the admin user edit flow.
+                  <div className="flex shrink-0 gap-3 border-t border-slate-800 px-6 py-4">
+                    <button
+                      type="button"
+                      onClick={closeForm}
+                      className="app-btn app-btn-secondary flex-1"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSubmit as any}
+                      disabled={submitting}
+                      className="app-btn app-btn-primary flex-1"
+                    >
+                      {submitting
+                        ? "Saving…"
+                        : editingId
+                          ? "💾 Save Changes"
+                          : "✨ Create User"}
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* DELETE CONFIRM MODAL */}
+          <AnimatePresence>
+            {deleteTarget && (
+              <motion.div
+                key="delete-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+                onClick={() => setDeleteTarget(null)}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center"
+                >
+                  <div className="text-5xl mb-3">⚠️</div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                    Delete User?
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                    Permanently delete{" "}
+                    <strong className="text-gray-900 dark:text-white">
+                      @{deleteTarget.user.username}
+                    </strong>{" "}
+                    and all their data?{" "}
+                    <span className="text-red-500 font-medium">
+                      This cannot be undone.
+                    </span>
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setDeleteTarget(null)}
+                      className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={confirmDelete}
+                      className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors"
+                    >
+                      🗑️ Delete Forever
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* SUBJECT ASSIGNMENT MODAL */}
+          <AnimatePresence>
+            {subjectModal && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                onClick={() => setSubjectModal(null)}
+              >
+                <motion.div
+                  initial={{ scale: 0.95 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
+                >
+                  <div className="flex items-center justify-between px-6 py-4 border-b dark:border-gray-700">
+                    <div>
+                      <h2 className="font-black text-gray-900 dark:text-white">
+                        📚 Subject Assignments
+                      </h2>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {subjectModal.user.first_name}{" "}
+                        {subjectModal.user.last_name} ·{" "}
+                        {subjectModal.department}
                       </p>
-                      <p className="mt-2">
-                        Contact your administrator to change assigned subjects
-                        or class.
+                    </div>
+                    <button
+                      onClick={() => setSubjectModal(null)}
+                      className="text-gray-400 hover:text-gray-600 text-xl"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                    <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-3">
+                      <span className="text-2xl">📊</span>
+                      <div>
+                        <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300">
+                          {subjectAssigns.length} subject
+                          {subjectAssigns.length !== 1 ? "s" : ""} assigned
+                        </p>
+                        <p className="text-xs text-indigo-500 dark:text-indigo-400">
+                          Across{" "}
+                          {
+                            Array.from(
+                              new Set(
+                                subjectAssigns
+                                  .map((a: any) => a.student_class)
+                                  .filter(Boolean),
+                              ),
+                            ).length
+                          }{" "}
+                          class(es)
+                        </p>
+                      </div>
+                    </div>
+
+                    {subjectAssigns.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+                          Current Assignments
+                        </p>
+                        {Array.from(
+                          new Set(
+                            subjectAssigns.map(
+                              (a: any) => a.subject ?? a.course_title ?? "",
+                            ),
+                          ),
+                        ).map((subj: any) => (
+                          <div
+                            key={subj}
+                            className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                          >
+                            <span className="text-green-500 text-sm">✓</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              {subj}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4">
+                      <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                        🔧 To reassign subjects
                       </p>
+                      <div className="space-y-2 text-xs text-blue-600 dark:text-blue-400">
+                        <p>
+                          This teacher's subject assignments can be updated
+                          through the admin user edit flow.
+                        </p>
+                        <p className="mt-2">
+                          Contact your administrator to change assigned subjects
+                          or class.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="px-5 py-3 border-t dark:border-gray-700">
-                  <button
-                    onClick={() => setSubjectModal(null)}
-                    className="w-full py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors"
-                  >
-                    Close
-                  </button>
-                </div>
+                  <div className="px-5 py-3 border-t dark:border-gray-700">
+                    <button
+                      onClick={() => setSubjectModal(null)}
+                      className="w-full py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 

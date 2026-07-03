@@ -213,7 +213,7 @@ const Signup: React.FC = () => {
   `;
 
   return (
-    <Layout showBackButton backTo="/">
+    <Layout showBackButton backTo="/" showNextButton nextTo="/login">
       <div className="min-h-[calc(100vh-5rem)] bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

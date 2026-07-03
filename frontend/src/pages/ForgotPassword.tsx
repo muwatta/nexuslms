@@ -107,7 +107,7 @@ const ForgotPassword: React.FC = () => {
   `;
 
   return (
-    <Layout showBackButton backTo="/login">
+    <Layout showBackButton backTo="/login" showNextButton nextTo="/login">
       <div className="min-h-[calc(100vh-5rem)] bg-gradient-to-br from-slate-50 via-blue-50 to-violet-50 dark:from-slate-950 dark:via-slate-900 dark:to-violet-950 flex items-center justify-center p-4 relative overflow-hidden">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">

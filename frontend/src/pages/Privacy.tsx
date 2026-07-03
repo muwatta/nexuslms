@@ -5,7 +5,7 @@ import { Shield, Lock, Eye, Database } from "lucide-react";
 
 const Privacy: React.FC = () => {
   return (
-    <Layout showBackButton backTo="/">
+    <Layout showBackButton backTo="/" showNextButton nextTo="/signup">
       <div className="min-h-[calc(100vh-5rem)] bg-slate-50 dark:bg-slate-950 py-12 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-8 md:p-12">

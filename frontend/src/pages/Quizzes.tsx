@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../api";
-import BackButton from "../components/BackButton";
+import Layout from "../components/Layout";
 
 interface Quiz {
   id: number;
@@ -72,84 +72,85 @@ const Quizzes: React.FC = () => {
 
   if (selected)
     return (
-      <div className="p-6">
-        <div className="mb-4">
-          <BackButton />
-        </div>
-        <h2 className="text-2xl font-bold">{selected.title}</h2>
-        {timeLeft != null && (
-          <p className="text-red-600 font-bold">
-            Time left: {Math.floor(timeLeft / 60)}:
-            {("0" + (timeLeft % 60)).slice(-2)}
-          </p>
-        )}
-        {selected.questions.map((q) => (
-          <div key={q.id} className="mt-4">
-            <p className="font-semibold">{q.text}</p>
-            {q.choices.map((c, i) => (
-              <label key={i} className="block">
-                <input
-                  type="radio"
-                  name={`q${q.id}`}
-                  onChange={() => handleAnswer(q.id, i)}
-                  disabled={result !== null}
-                />{" "}
-                {c}
-              </label>
-            ))}
-          </div>
-        ))}
-        {result === null ? (
-          <button
-            onClick={submit}
-            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            Submit
-          </button>
-        ) : (
-          <>
-            <p className="mt-4">Score: {result}</p>
-            {/* review section */}
-            <div className="mt-6">
-              <h3 className="font-semibold">Review</h3>
-              {selected.questions.map((q) => {
-                const selectedIdx = answers[q.id];
-                const correctIdx = q.correct_index;
-                return (
-                  <div key={q.id} className="mt-2 p-2 border rounded">
-                    <p className="font-semibold">{q.text}</p>
-                    <p>
-                      Your answer: {q.choices[selectedIdx] || "—"}{" "}
-                      {selectedIdx === correctIdx ? "✅" : "❌"}
-                    </p>
-                    {!(selectedIdx === correctIdx) && (
-                      <p>Correct answer: {q.choices[correctIdx ?? 0]}</p>
-                    )}
-                  </div>
-                );
-              })}
+      <Layout showBackButton>
+        <div className="p-6">
+          <h2 className="text-2xl font-bold">{selected.title}</h2>
+          {timeLeft != null && (
+            <p className="text-red-600 font-bold">
+              Time left: {Math.floor(timeLeft / 60)}:
+              {("0" + (timeLeft % 60)).slice(-2)}
+            </p>
+          )}
+          {selected.questions.map((q) => (
+            <div key={q.id} className="mt-4">
+              <p className="font-semibold">{q.text}</p>
+              {q.choices.map((c, i) => (
+                <label key={i} className="block">
+                  <input
+                    type="radio"
+                    name={`q${q.id}`}
+                    onChange={() => handleAnswer(q.id, i)}
+                    disabled={result !== null}
+                  />{" "}
+                  {c}
+                </label>
+              ))}
             </div>
-          </>
-        )}
-      </div>
+          ))}
+          {result === null ? (
+            <button
+              onClick={submit}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              Submit
+            </button>
+          ) : (
+            <>
+              <p className="mt-4">Score: {result}</p>
+              {/* review section */}
+              <div className="mt-6">
+                <h3 className="font-semibold">Review</h3>
+                {selected.questions.map((q) => {
+                  const selectedIdx = answers[q.id];
+                  const correctIdx = q.correct_index;
+                  return (
+                    <div key={q.id} className="mt-2 p-2 border rounded">
+                      <p className="font-semibold">{q.text}</p>
+                      <p>
+                        Your answer: {q.choices[selectedIdx] || "—"}{" "}
+                        {selectedIdx === correctIdx ? "✅" : "❌"}
+                      </p>
+                      {!(selectedIdx === correctIdx) && (
+                        <p>Correct answer: {q.choices[correctIdx ?? 0]}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      </Layout>
     );
 
   return (
-    <div className="p-6">
-      <div className="mb-4">
-        <BackButton />
+    <Layout showBackButton>
+      <div className="p-6">
+        <h2 className="text-2xl font-bold">Available Quizzes</h2>
+        <ul className="mt-4 space-y-2">
+          {quizzes.map((q) => (
+            <li key={q.id}>
+              <button
+                onClick={() => take(q)}
+                className="text-blue-600 underline"
+              >
+                {q.title}
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
-      <h2 className="text-2xl font-bold">Available Quizzes</h2>
-      <ul className="mt-4 space-y-2">
-        {quizzes.map((q) => (
-          <li key={q.id}>
-            <button onClick={() => take(q)} className="text-blue-600 underline">
-              {q.title}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    </Layout>
   );
 };
 

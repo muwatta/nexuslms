@@ -1,20 +1,27 @@
 // components/Layout.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import useTheme from "../hooks/useTheme";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sun, Moon, ArrowLeft, GraduationCap } from "lucide-react";
 
+import NextButton from "./NextButton";
+
 interface LayoutProps {
   children: React.ReactNode;
   showBackButton?: boolean;
-  backTo?: string;
+  // if omitted, back navigates -1
+  backTo?: string | number;
+  showNextButton?: boolean;
+  nextTo?: string;
 }
 
 const Layout: React.FC<LayoutProps> = ({
   children,
   showBackButton = false,
-  backTo = "/",
+  backTo,
+  showNextButton = false,
+  nextTo,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -71,6 +78,24 @@ const Layout: React.FC<LayoutProps> = ({
 
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-6">
+              {/* Inline page navigation (Back / Next) */}
+              <div className="hidden md:flex items-center gap-2 mr-4">
+                {showBackButton && (
+                  <button
+                    onClick={() => {
+                      if (backTo !== undefined) navigate(backTo as any);
+                      else navigate(-1);
+                    }}
+                    className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-slate-700 dark:text-slate-300"
+                  >
+                    <ArrowLeft size={16} />
+                    <span className="ml-2">Back</span>
+                  </button>
+                )}
+                {showNextButton && (
+                  <NextButton to={nextTo} label="Next" className="ml-1" />
+                )}
+              </div>
               {!isSignupPage &&
                 navLinks.map((link) => (
                   <a
@@ -113,13 +138,21 @@ const Layout: React.FC<LayoutProps> = ({
                   </Link>
                 </>
               ) : (
-                <button
-                  onClick={() => navigate(backTo)}
-                  className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
-                >
-                  <ArrowLeft size={20} />
-                  Back
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      if (backTo !== undefined) navigate(backTo as any);
+                      else navigate(-1);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
+                  >
+                    <ArrowLeft size={20} />
+                    Back
+                  </button>
+                  {showNextButton && (
+                    <NextButton to={nextTo} className="ml-2" />
+                  )}
+                </div>
               )}
             </div>
 
@@ -181,16 +214,29 @@ const Layout: React.FC<LayoutProps> = ({
                     </Link>
                   </>
                 ) : (
-                  <button
-                    onClick={() => {
-                      navigate(backTo);
-                      setIsMenuOpen(false);
-                    }}
-                    className="flex items-center gap-2 w-full py-2 text-slate-600 dark:text-slate-300 font-medium"
-                  >
-                    <ArrowLeft size={20} />
-                    Back to Home
-                  </button>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => {
+                        navigate(backTo);
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full py-2 text-slate-600 dark:text-slate-300 font-medium"
+                    >
+                      <ArrowLeft size={20} />
+                      Back to Home
+                    </button>
+                    {showNextButton && (
+                      <button
+                        onClick={() => {
+                          if (nextTo) navigate(nextTo);
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2 w-full py-2 text-slate-600 dark:text-slate-300 font-medium"
+                      >
+                        Next
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </motion.div>

@@ -121,7 +121,7 @@ const Landing: React.FC = () => {
   };
 
   return (
-    <Layout>
+    <Layout showNextButton nextTo="/signup">
       {/* ── Hero Section ─────────────────────────────────────────────────── */}
       <section className="relative pt-32 lg:pt-40 pb-20 lg:pb-32 overflow-hidden">
         <div className="absolute inset-0 -z-10">
@@ -478,6 +478,8 @@ const Landing: React.FC = () => {
         animate={{ scale: 1 }}
         whileHover={{ scale: 1.1 }}
         onClick={() => setIsChatOpen(true)}
+        aria-label="Open chat with Muwatta AI"
+        title="Open chat"
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg hover:shadow-xl items-center justify-center ${isChatOpen ? "hidden" : "flex"}`}
       >
         <Bot size={28} />
@@ -503,6 +505,8 @@ const Landing: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsChatOpen(false)}
+                aria-label="Close chat"
+                title="Close chat"
                 className="text-white/80 hover:text-white transition-colors"
               >
                 <CloseIcon size={20} />
@@ -564,6 +568,8 @@ const Landing: React.FC = () => {
               <button
                 onClick={handleSendMessage}
                 disabled={isChatLoading || !chatInput.trim()}
+                aria-label="Send message"
+                title="Send message"
                 className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors flex-shrink-0"
               >
                 <Send size={18} />
