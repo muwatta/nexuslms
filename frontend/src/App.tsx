@@ -13,7 +13,6 @@ import AIChat from "./components/AIChat";
 import Notifications from "./components/Notifications";
 import { getDashboardRouteByRole, getUserData } from "./utils/authUtils";
 
-
 const lazy = (fn: () => Promise<{ default: React.ComponentType<any> }>) =>
   React.lazy(fn);
 
@@ -282,7 +281,7 @@ const AppShell: React.FC = () => {
                 element={
                   <ProtectedRoute requiredPermission="user.create">
                     <Page>
-                      <ManageUsers />
+                      <ManageUsers useLayout={false} />
                     </Page>
                   </ProtectedRoute>
                 }

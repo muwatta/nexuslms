@@ -1,7 +1,3 @@
-// frontend/src/pages/Courses.tsx
-// Courses are now filtered by the logged-in user's department.
-// Super admins can see all courses or filter by department.
-
 import React, { useEffect, useState } from "react";
 import api from "../api";
 import { getUserData, hasPermission } from "../utils/authUtils";

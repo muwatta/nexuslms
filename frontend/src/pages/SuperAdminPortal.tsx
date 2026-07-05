@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../api";
 import { getUserData } from "../utils/authUtils";
@@ -634,34 +634,49 @@ const SuperAdminPortal: React.FC = () => {
                         icon: "🧹",
                         href: "https://github.com/muwatta/nexuslms/blob/main/backend/api/README_ADMIN_API.md#management-command-normalize_departments",
                       },
-                    ].map((item) => (
-                      <motion.button
-                        key={item.href ?? item.route}
-                        whileHover={{ y: -2 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => {
-                          if (item.href) {
-                            window.open(
-                              item.href,
-                              "_blank",
-                              "noopener,noreferrer",
-                            );
-                            return;
-                          }
-                          if (item.route) {
-                            navigate(item.route);
-                          }
-                        }}
-                        className={styles.quickActionBtn}
-                      >
-                        <span className={styles.quickActionIcon}>
-                          {item.icon}
-                        </span>
-                        <span className={styles.quickActionLabel}>
-                          {item.label}
-                        </span>
-                      </motion.button>
-                    ))}
+                    ].map((item) =>
+                      item.href ? (
+                        <motion.a
+                          key={item.href}
+                          href={item.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={item.label}
+                          title={item.label}
+                          whileHover={{ y: -2 }}
+                          whileTap={{ scale: 0.95 }}
+                          className={styles.quickActionBtn}
+                        >
+                          <span className={styles.quickActionIcon}>
+                            {item.icon}
+                          </span>
+                          <span className={styles.quickActionLabel}>
+                            {item.label}
+                          </span>
+                        </motion.a>
+                      ) : (
+                        <motion.div
+                          key={item.route}
+                          whileHover={{ y: -2 }}
+                          whileTap={{ scale: 0.95 }}
+                          className={styles.quickActionBtn}
+                        >
+                          <Link
+                            to={item.route!}
+                            className="flex flex-col items-center gap-2.5 w-full h-full"
+                            aria-label={item.label}
+                            title={item.label}
+                          >
+                            <span className={styles.quickActionIcon}>
+                              {item.icon}
+                            </span>
+                            <span className={styles.quickActionLabel}>
+                              {item.label}
+                            </span>
+                          </Link>
+                        </motion.div>
+                      ),
+                    )}
                   </div>
                 </div>
               </div>
@@ -876,7 +891,7 @@ const SuperAdminPortal: React.FC = () => {
                 </div>
 
                 <div className={styles.settingsCard}>
-                  <ManageUsers />
+                  <ManageUsers useLayout={false} showHeader={false} />
                 </div>
               </div>
             )}

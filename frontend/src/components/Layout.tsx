@@ -1,16 +1,22 @@
-// components/Layout.tsx
 import React, { useEffect, useState } from "react";
 import useTheme from "../hooks/useTheme";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Sun, Moon, ArrowLeft, GraduationCap } from "lucide-react";
+import {
+  Menu,
+  X,
+  Sun,
+  Moon,
+  ArrowLeft,
+  ArrowRight,
+  GraduationCap,
+} from "lucide-react";
 
 import NextButton from "./NextButton";
 
 interface LayoutProps {
   children: React.ReactNode;
   showBackButton?: boolean;
-  // if omitted, back navigates -1
   backTo?: string | number;
   showNextButton?: boolean;
   nextTo?: string;
@@ -36,8 +42,6 @@ const Layout: React.FC<LayoutProps> = ({
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // theme handled by `useTheme` hook
 
   const navLinks = [
     { href: "/#programs", label: "Programs" },
@@ -217,7 +221,8 @@ const Layout: React.FC<LayoutProps> = ({
                   <div className="space-y-2">
                     <button
                       onClick={() => {
-                        navigate(backTo);
+                        if (backTo !== undefined) navigate(backTo as any);
+                        else navigate(-1);
                         setIsMenuOpen(false);
                       }}
                       className="flex items-center gap-2 w-full py-2 text-slate-600 dark:text-slate-300 font-medium"
@@ -244,8 +249,33 @@ const Layout: React.FC<LayoutProps> = ({
         </AnimatePresence>
       </motion.nav>
 
+      {/* Mobile back/next footer */}
+      {(showBackButton || showNextButton) && (
+        <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 p-3 bg-white/95 dark:bg-slate-950/95 border-t border-slate-200 dark:border-slate-800 backdrop-blur-md shadow-[0_-8px_30px_-12px_rgba(15,23,42,0.2)]">
+          <div className="flex items-center justify-between gap-2">
+            {showBackButton ? (
+              <button
+                onClick={() => {
+                  if (backTo !== undefined) navigate(backTo as any);
+                  else navigate(-1);
+                }}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800 transition-color"
+              >
+                <ArrowLeft size={18} />
+                Back
+              </button>
+            ) : (
+              <div className="flex-1" />
+            )}
+            {showNextButton && (
+              <NextButton to={nextTo} label="Next" className="flex-1" />
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
-      <main className={isSignupPage ? "pt-20" : ""}>{children}</main>
+      <main className={isSignupPage ? "pt-20 pb-24" : "pb-0"}>{children}</main>
     </div>
   );
 };
