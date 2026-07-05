@@ -1,67 +1,117 @@
 # NexusLMS
 
-NexusLMS is a modern learning management system designed for schools and educational institutions. It combines a Django REST API backend with a React + Vite frontend to support roles such as super admin, school admin, teacher, student, parent, and non-teaching staff.
+NexusLMS is a modern learning management system built for schools and educational institutions.
+It pairs a Django REST API backend with a React + TypeScript + Vite frontend to support multiple roles, including super admin, school admin, teacher, student, parent, and non-teaching staff.
 
-## Overview
+---
 
-The platform already provides a strong foundation for school operations, including:
+## What this project is
 
-- multi-role authentication and dashboard routing
-- user creation, profile management, and role assignment from the app UI
-- school/department-based dashboards
-- course and enrollment workflows
-- assignments, quizzes, and academic reporting
-- payments with Paystack integration
-- audit-style visibility and role-group synchronization
+NexusLMS is designed to provide a unified school management experience with:
 
-## Project structure
+- role-based routing and access control
+- user and profile administration from both UI and backend
+- department-level dashboards and school administration workflows
+- academic workflows for courses, enrollments, assignments, quizzes, results, and report cards
+- payment capture and fee tracking
+- analytics and reporting endpoints for course/student insights
+- a responsive React frontend with reusable page components and page-level error handling
 
-```text
-backend/        # Django REST API, models, services, and permissions
-frontend/       # React + TypeScript + Vite client and UI pages
-docker/         # Docker Compose and deployment assets
-docs/           # Product, architecture, and API documentation
-```
+---
 
-## Tech stack
+## Architecture
 
-- Backend: Python, Django, Django REST Framework, SimpleJWT
-- Frontend: React, TypeScript, Vite, Tailwind CSS, Framer Motion
-- Database: SQLite for local development, PostgreSQL-ready for production
-- APIs: DRF, DRF Spectacular, CORS support
-- Integrations: Paystack, PDF generation, and analytics views
+### Backend (`backend/`)
 
-## Current status
+- Django REST Framework for API endpoints
+- `api` app containing models, serializers, views, permissions, and services
+- custom authentication with JWT cookies
+- role-aware permissions and group synchronization
+- `drf_spectacular` API schema support
+- local SQLite support and production readiness for PostgreSQL
 
-### Completed areas
+### Frontend (`frontend/`)
 
-- role-based access and dashboard routing
-- super-admin portal with management actions
-- in-app user management and role updates
-- teacher, student, and admin dashboard experiences
-- payment and academic workflow integration
-- modernized frontend UI with a more consistent design system
+- React + TypeScript + Vite
+- Tailwind CSS for styling
+- lazy-loaded page routes
+- protected route wrapper for permission enforcement
+- reusable layout and navigation components
+- support for admin, teacher, student, and parent experiences
 
-### What is still left to do
+### Deployment assets (`docker/`)
 
-To make NexusLMS feel fully production-ready, the next priorities are:
+- Docker Compose manifests for local and production environment setup
+- Kubernetes manifests for backend service deployment
 
-- stronger automated testing across backend and frontend
-- richer notifications and communications (email, SMS, announcements)
-- more advanced analytics and reporting exports
-- improved assessment tools such as timed quizzes and grading workflows
-- better mobile experience and accessibility polish
-- deeper integrations with external tools like SSO, video conferencing, and payment providers
-- performance hardening and deployment optimization for real-world scale
+---
 
-## Prerequisites
+## Current state
 
-- Python 3.11+
-- Node.js 18+
-- npm or yarn
-- Docker Compose (optional)
+### What has been completed
 
-## Backend setup
+- Super admin portal and admin dashboard pages
+- role-aware routing and protected routes in React
+- user management page with standalone layout support
+- analytics page with course/student lookup and UX improvements
+- backend test suite configured and passing for current scenarios
+- frontend production build validation passing
+- backend configuration and deployment checks identified, including security and schema warnings
+
+### Recent improvements
+
+- fixed duplicate navigation/layout for standalone pages such as `/manage-users`
+- enhanced `ManageUsers.tsx` and `Analytics.tsx` for better spacing, error handling, and layout consistency
+- resolved backend import/test failure by removing an accidental `backend/__init__.py`
+- validated frontend build output and backend test execution
+
+### Where we are now
+
+- Frontend is compiling and building successfully.
+- Backend tests are passing in the current environment.
+- Deployment checks report warnings, especially around security settings and API schema generation.
+- The codebase is stable enough for continued development, but production hardening is still required.
+
+---
+
+## Known issues / cleanup items
+
+- `python manage.py check --deploy` reports security warnings for `DEBUG`, SSL/HSTS, and secure cookies in production
+- `drf_spectacular` currently issues schema warnings for custom authentication and serializer method resolution
+- there are backend pagination warnings from unordered querysets in some DRF views
+- analytics and reporting still need richer visualizations and export capabilities
+
+---
+
+## Next priorities
+
+### Immediate next tasks
+
+1. Harden production settings
+   - set `SECURE_HSTS_SECONDS`
+   - enable `SECURE_SSL_REDIRECT`
+   - enable `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE`
+   - disable `DEBUG` for production
+2. Address API schema warnings
+   - add `OpenApiAuthenticationExtension` support for `CookieJWTAuthentication`
+   - explicitly define serializer classes or schema fields for custom APIViews
+3. Expand test coverage
+   - add backend tests for critical business flows
+   - add frontend tests for layout and page behavior
+
+### Medium-term roadmap
+
+- improve analytics dashboards with charts and export features
+- add notifications and communication workflows (email, SMS, announcements)
+- improve mobile-responsive pages and accessibility
+- add stronger assessment workflows: timed quizzes, grading, and feedback
+- add integration support for SSO or video conferencing tools
+
+---
+
+## Getting started
+
+### Backend setup
 
 ```bash
 cd backend
@@ -72,9 +122,9 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-The API will be available at http://localhost:8000.
+The backend API will run at `http://localhost:8000`.
 
-## Frontend setup
+### Frontend setup
 
 ```bash
 cd frontend
@@ -82,38 +132,40 @@ npm install
 npm run dev
 ```
 
-The frontend will be available at http://localhost:5173.
+The frontend will run at `http://localhost:5173`.
 
-## Useful commands
+### Useful commands
 
 ```bash
-# Backend tests
+# Backend checks and tests
 cd backend
+python manage.py check --deploy
 python manage.py test
 
-# Frontend production build
+# Frontend production bundle
 cd frontend
 npm run build
 
-# Docker compose
+# Docker compose development
 cd docker
 docker compose up --build
 ```
 
-## Notes
+---
 
-- The frontend and backend are designed to work together as one product experience.
-- Many administrative settings can now be handled from the UI rather than relying only on Django admin.
-- The project includes both development tooling and deployment assets for local and container-based setup.
+## Project structure
 
-## Suggested next roadmap
+```text
+backend/        # Django API, models, serializers, permissions, services
+frontend/       # React + TypeScript + Vite client app
+docker/         # Docker Compose and Kubernetes deployment assets
+docs/           # Product and architecture documentation
+```
 
-1. Finish end-to-end testing for major user flows.
-2. Expand reporting and analytics dashboards.
-3. Improve communication and notification systems.
-4. Refine teacher and student workflows for daily classroom use.
-5. Prepare the system for a smoother production rollout.
+---
 
-## Contact
+## Contact and contribution
 
-For questions, collaboration, or feedback, contact the project maintainer through the repository or the project history.
+This repository is intended as a working LMS platform foundation.
+Pull requests, feature improvements, and bug fixes are welcome.
+If you are maintaining the project locally, use the documentation and notes above to track progress and plan the next milestones.
