@@ -37,6 +37,7 @@ class AssignmentSubmission(models.Model):
     status = models.CharField(max_length=20, default="submitted")
 
     class Meta:
+        ordering = ["-submitted_at"]
         unique_together = ["assignment", "student"]
 
     def __str__(self):

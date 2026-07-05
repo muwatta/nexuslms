@@ -96,8 +96,8 @@ urlpatterns = [
     # PERMISSIONS & ANALYTICS
     path("permissions/me/", PermissionsMeView.as_view(), name="permissions_me"),
     path("roles-and-permissions/", RolesAndPermissionsView.as_view(), name="roles_and_permissions"),
-    path("analytics/student/<int:student_id>/", student_analytics, name="student_analytics"),
-    path("analytics/course/<int:course_id>/", course_analytics, name="course_analytics"),
+    path("analytics/student/<str:student_identifier>/", student_analytics, name="student_analytics"),
+    path("analytics/course/<str:course_identifier>/", course_analytics, name="course_analytics"),
 
     # AI & ADMIN
     path("ai/", AIView.as_view(), name="ai"),

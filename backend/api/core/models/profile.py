@@ -205,6 +205,7 @@ class Profile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["role", "department"]),
             models.Index(fields=["role", "student_class"]),

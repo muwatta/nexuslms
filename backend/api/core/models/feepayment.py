@@ -20,6 +20,9 @@ class FeePayment(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     due_date = models.DateField()
     last_payment_date = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-due_date"]
     
     def save(self, *args, **kwargs):
         self.balance = self.total_amount - self.amount_paid

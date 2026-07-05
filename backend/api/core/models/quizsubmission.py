@@ -22,6 +22,9 @@ class QuizSubmission(models.Model):
     def __str__(self):
         return f"{self.student.user.username} - {self.quiz.title}"
 
+    class Meta:
+        ordering = ["-submitted_at"]
+
     def grade(self):
         total = 0.0
         for q in self.quiz.questions.all():

@@ -30,6 +30,9 @@ class Achievement(models.Model):
     def __str__(self):
         return f"{self.student.user.username} - {self.title}"
 
+    class Meta:
+        ordering = ["-date_earned"]
+
 
 class Project(models.Model):
     STATUS_CHOICES = [
@@ -52,6 +55,9 @@ class Project(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.course.title}"
+
+    class Meta:
+        ordering = ["-start_date"]
 
 
 class Milestone(models.Model):
@@ -77,3 +83,6 @@ class Milestone(models.Model):
 
     def __str__(self):
         return f"{self.course.title} - {self.title}"
+
+    class Meta:
+        ordering = ["-created_at"]
