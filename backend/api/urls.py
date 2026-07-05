@@ -3,11 +3,9 @@ from rest_framework.routers import DefaultRouter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
-from .views import ai_proxy
 from .views.parent_views import ParentDashboardViewSet
 
-from .views.ai import AIChatView
-
+from .views.ai import AIView
 from . import views as auth_view_module
 from .views import (
     password_reset_request, verify_otp, password_reset_confirm,
@@ -86,13 +84,12 @@ urlpatterns = [
     path("auth/verify-otp/",             verify_otp,              name="verify_otp"),
     path("auth/password-reset-confirm/", password_reset_confirm,  name="password_reset_confirm"),
    
-    path("ai/chat/", ai_proxy.claude_proxy, name="ai-chat"),
     path("permissions/me/", PermissionsMeView.as_view(), name="permissions_me"),
     path("roles-and-permissions/", RolesAndPermissionsView.as_view(), name="roles_and_permissions"),
     path("analytics/student/<str:student_identifier>/", student_analytics, name="student_analytics"),
     path("analytics/course/<str:course_identifier>/", course_analytics, name="course_analytics"),
 
-    path("ai/", AIView.as_view(), name="ai"),
+    path("ai/chat/", AIView.as_view(), name="ai-chat"),
     path("admin/sync-groups/", SyncGroupsView.as_view(), name="sync_groups"),
 
     path("class-choices/", ClassChoicesByDepartmentView.as_view(), name="class_choices"),
@@ -100,8 +97,6 @@ urlpatterns = [
     path("student/chat/",          StudentChatView.as_view(),        name="student-chat"),
     
     path("student/announcements/", AnnouncementListView.as_view(),   name="student-announcements"),
-    path('ai/chat/', AIChatView.as_view(), name='ai-chat'),
-
 ]
 
 urlpatterns += router.urls
