@@ -23,7 +23,7 @@ import api from "../api"; // Use our secure API instance
 
 const WHATSAPP_NUMBER = "+2349026642320";
 
-// ─── SYSTEM PROMPT ────────────────────────────────────────────────────────────
+//─ SYSTEM PROMP─
 const SYSTEM_PROMPT = `You are Muwatta AI, the friendly assistant for Muwatta Academy — an online educational institution in Nigeria.
 
 Muwatta Academy has three schools:
@@ -39,7 +39,7 @@ Key info:
 
 Be warm, concise, and helpful. Answer questions about programs, enrollment, pricing (say "contact us on WhatsApp for pricing"), and features. Keep responses under 3 sentences unless detail is needed. Always encourage enrollment or WhatsApp contact for next steps.`;
 
-// ─── COMPONENT ───────────────────────────────────────────────────────────────
+//─ COMPONEN
 const Landing: React.FC = () => {
   const [activeProgram, setActiveProgram] = useState<string | null>(null);
 
@@ -75,7 +75,7 @@ const Landing: React.FC = () => {
     );
   };
 
-  // ── SECURE AI Chat via Backend Proxy ─────────────────────────────────────
+  // SECURE AI Chat via Backend Proxy─
   const handleSendMessage = async () => {
     const userMessage = chatInput.trim();
     if (!userMessage || isChatLoading) return;
@@ -122,7 +122,7 @@ const Landing: React.FC = () => {
 
   return (
     <Layout showNextButton nextTo="/signup">
-      {/* ── Hero Section ─────────────────────────────────────────────────── */}
+      {/* Hero Section */}
       <section className="relative pt-32 lg:pt-40 pb-20 lg:pb-32 overflow-hidden">
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-r from-blue-400/20 to-violet-400/20 rounded-full blur-3xl" />
@@ -228,7 +228,7 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* ── Programs Section ─────────────────────────────────────────────── */}
+      {/* Programs Section */}
       <section
         id="programs"
         className="py-20 lg:py-32 bg-slate-50 dark:bg-slate-900/50"
@@ -295,7 +295,7 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* ── Features Section ─────────────────────────────────────────────── */}
+      {/* Features Section */}
       <section id="features" className="py-20 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
@@ -331,7 +331,7 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* ── Testimonials ─────────────────────────────────────────────────── */}
+      {/* Testimonials */}
       <section
         id="testimonials"
         className="py-20 lg:py-32 bg-slate-50 dark:bg-slate-900/50"
@@ -384,7 +384,7 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* ── CTA Section ─────────────────────────────────────────────────── */}
+      {/* CTA Section */}
       <section className="py-10 lg:py-24 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-violet-700" />
         <div className="max-w-4xl mx-auto px-4 relative text-center">
@@ -408,7 +408,7 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* ── Footer ──────────────────────────────────────────────────────── */}
+      {/* Foote─ */}
       <footer className="bg-slate-950 text-slate-400 py-16">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-12 mb-12">
@@ -472,7 +472,7 @@ const Landing: React.FC = () => {
         </div>
       </footer>
 
-      {/* ── AI Chat Button ───────────────────────────────────────────────── */}
+      {/* AI Chat Button */}
       <motion.button
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
@@ -485,7 +485,7 @@ const Landing: React.FC = () => {
         <Bot size={28} />
       </motion.button>
 
-      {/* ── AI Chat Window ───────────────────────────────────────────────── */}
+      {/* AI Chat Window */}
       <AnimatePresence>
         {isChatOpen && (
           <motion.div

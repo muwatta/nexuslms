@@ -122,7 +122,7 @@ interface Profile {
   };
 }
 
-// ── Constants 
+// ── Constants
 
 const CL: Record<string, string> = {
   jss1: "JSS 1",
@@ -458,7 +458,9 @@ const Toast = ({ message, type, onClose }: ToastProps) => (
     )}
     <p className="text-sm font-medium flex-1">{message}</p>
     <button
+      type="button"
       onClick={onClose}
+      aria-label="Close notification"
       className="opacity-70 hover:opacity-100 transition-opacity"
     >
       <X className="w-4 h-4" />
@@ -761,7 +763,7 @@ const SubjectInstructorDashboard: React.FC = () => {
       }
 
       // Map to StudentRow with explicit pid type
-    const rows: StudentRow[] = studentIds.map((pid: number) => {
+      const rows: StudentRow[] = studentIds.map((pid: number) => {
         const p = profileMap[pid] ?? {};
         const u = p.user ?? {};
         const ex = existing.find((r: any) => r.student === pid);
@@ -1009,7 +1011,7 @@ const SubjectInstructorDashboard: React.FC = () => {
     },
   ];
 
-  // ── Render 
+  // ── Render
   return (
     <TeacherLayout
       activeSection={activeSection}
@@ -1073,9 +1075,7 @@ const SubjectInstructorDashboard: React.FC = () => {
       </div>
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        {/* ═══════════════════════════════════════════════════════════════════ */}
         {/* RESULT ENTRY SECTION                                               */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
         {activeSection === "entry" && (
           <>
             {/* Filters Card */}
@@ -1192,11 +1192,16 @@ const SubjectInstructorDashboard: React.FC = () => {
                         <CheckCircle2 className="w-3 h-3" />
                         {studentRows.length} students
                       </Badge>
-
                       <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <button
-                          type="button"
-                          onClick={() => setAutoSave((v) => !v)}
+                        <input
+                          type="checkbox"
+                          role="switch"
+                          checked={autoSave}
+                          onChange={(e) => setAutoSave(e.target.checked)}
+                          className="sr-only" // hides the native checkbox but keeps it accessible
+                          aria-label="Toggle autosave"
+                        />
+                        <span
                           className={`relative w-11 h-6 rounded-full transition-colors ${
                             autoSave
                               ? "bg-emerald-500"
@@ -1208,7 +1213,7 @@ const SubjectInstructorDashboard: React.FC = () => {
                               autoSave ? "translate-x-6" : "translate-x-1"
                             }`}
                           />
-                        </button>
+                        </span>
                         <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
                           Autosave
                         </span>
@@ -1415,9 +1420,7 @@ const SubjectInstructorDashboard: React.FC = () => {
           </>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
         {/* ASSIGNMENTS SECTION                                                */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
         {activeSection === "assignments" && (
           <div className="space-y-6">
             <SectionHeader
@@ -1596,9 +1599,7 @@ const SubjectInstructorDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
         {/* MY STUDENTS SECTION                                                */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
         {activeSection === "students" && (
           <div className="space-y-6">
             <SectionHeader
@@ -1752,9 +1753,7 @@ const SubjectInstructorDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* ═════════════════════════════════════════════════════════════════════ */}
       {/* STUDENT PROGRESS MODAL                                              */}
-      {/* ═════════════════════════════════════════════════════════════════════ */}
       <AnimatePresence>
         {progressStudent && (
           <motion.div
@@ -1792,6 +1791,8 @@ const SubjectInstructorDashboard: React.FC = () => {
                 <button
                   onClick={() => setProgressStudent(null)}
                   className="text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  aria-label="Close progress view"
+                  title="Close progress view"
                 >
                   <X className="w-5 h-5" />
                 </button>

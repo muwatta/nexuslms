@@ -19,7 +19,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-// Type
+//  Types 
 interface UserProfile {
   id: number;
   user: {
@@ -49,7 +49,7 @@ interface UserProfileFormData {
   bio: string;
 }
 
-// Constant
+//  Constants 
 const ROLE_CONFIG: Record<
   string,
   { color: string; icon: React.ReactNode; label: string }
@@ -86,7 +86,7 @@ const ROLE_CONFIG: Record<
   },
 };
 
-// Utilitie
+//  Helpers 
 const getInitials = (profile: UserProfile | null): string => {
   if (!profile) return "U";
   const { first_name, last_name, username } = profile.user;
@@ -104,24 +104,34 @@ const getDisplayName = (profile: UserProfile | null): string => {
   return username ?? "";
 };
 
-const formatRole = (role: string): string => {
-  return (
-    ROLE_CONFIG[role]?.label ||
-    role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-  );
-};
+const formatRole = (role: string): string =>
+  ROLE_CONFIG[role]?.label ||
+  role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-// Component─
+//  Sub‑components ─
+const Badge: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  colorClass: string;
+}> = ({ icon, label, colorClass }) => (
+  <span
+    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${colorClass}`}
+  >
+    {icon}
+    {label}
+  </span>
+);
 
 interface FormFieldProps {
   label: string;
   value: string;
   field: FormField;
-  type?: "text" | "email" | "tel" | "textarea";
   icon?: React.ReactNode;
   editing: boolean;
   onChange: (field: FormField, value: string) => void;
   placeholder?: string;
+  multiline?: boolean;
+  type?: "text" | "email" | "tel";
 }
 
 const FormField: React.FC<FormFieldProps> = React.memo(
@@ -129,23 +139,16 @@ const FormField: React.FC<FormFieldProps> = React.memo(
     label,
     value,
     field,
-    type = "text",
     icon,
     editing,
     onChange,
     placeholder,
+    multiline = false,
+    type = "text",
   }) => {
-    const inputClasses = `
-    w-full px-3 py-2.5 text-sm 
-    bg-white dark:bg-gray-800
-    border border-gray-200 dark:border-gray-600
-    rounded-lg 
-    focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
-    dark:focus:ring-blue-500/20 dark:focus:border-blue-400
-    transition-all duration-200
-    placeholder:text-gray-400 dark:placeholder:text-gray-500
-    ${icon ? "pl-10" : ""}
-  `;
+    const baseClasses =
+      "w-full px-3 py-2.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-400 transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-gray-500";
+    const inputClasses = icon ? `pl-10 ${baseClasses}` : baseClasses;
 
     return (
       <div className="group">
@@ -159,7 +162,7 @@ const FormField: React.FC<FormFieldProps> = React.memo(
             </span>
           )}
           {editing ? (
-            type === "textarea" ? (
+            multiline ? (
               <textarea
                 value={value}
                 onChange={(e) => onChange(field, e.target.value)}
@@ -179,15 +182,15 @@ const FormField: React.FC<FormFieldProps> = React.memo(
           ) : (
             <div
               className={`
-            px-3 py-2.5 text-sm rounded-lg min-h-[42px] flex items-center
-            ${
-              value
-                ? "bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100"
-                : "bg-gray-50/50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-500 italic"
-            }
-            ${icon ? "pl-10" : ""}
-            border border-transparent
-          `}
+                px-3 py-2.5 text-sm rounded-lg min-h-[42px] flex items-center
+                ${
+                  value
+                    ? "bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100"
+                    : "bg-gray-50/50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-500 italic"
+                }
+                ${icon ? "pl-10" : ""}
+                border border-transparent
+              `}
             >
               {value || "Not set"}
             </div>
@@ -197,7 +200,6 @@ const FormField: React.FC<FormFieldProps> = React.memo(
     );
   },
 );
-
 FormField.displayName = "FormField";
 
 interface AlertProps {
@@ -227,7 +229,11 @@ const Alert: React.FC<AlertProps> = ({ message, type, onDismiss }) => (
     )}
     <div className="flex-1">
       <p
-        className={`text-sm font-medium ${type === "success" ? "text-emerald-800 dark:text-emerald-200" : "text-rose-800 dark:text-rose-200"}`}
+        className={`text-sm font-medium ${
+          type === "success"
+            ? "text-emerald-800 dark:text-emerald-200"
+            : "text-rose-800 dark:text-rose-200"
+        }`}
       >
         {message}
       </p>
@@ -236,7 +242,6 @@ const Alert: React.FC<AlertProps> = ({ message, type, onDismiss }) => (
       <button
         onClick={onDismiss}
         aria-label="Dismiss alert"
-        title="Dismiss alert"
         className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
       >
         <X className="w-4 h-4" />
@@ -245,7 +250,7 @@ const Alert: React.FC<AlertProps> = ({ message, type, onDismiss }) => (
   </motion.div>
 );
 
-// Main Component
+//  Main Component ─
 const Profile: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -265,12 +270,13 @@ const Profile: React.FC = () => {
     bio: "",
   });
 
-  //  Derived State
+  //  Derived state 
   const roleConfig = useMemo(() => {
     if (!profile) return null;
     return (
       ROLE_CONFIG[profile.role] || {
-        color: "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
+        color:
+          "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700",
         icon: <User className="w-3 h-3" />,
         label: formatRole(profile.role),
       }
@@ -282,7 +288,7 @@ const Profile: React.FC = () => {
     [profile],
   );
 
-  //  Handler
+  //  Handlers 
   const handleFieldChange = useCallback((field: FormField, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
@@ -353,8 +359,6 @@ const Profile: React.FC = () => {
 
       setEditing(false);
       setMessage({ text: "Profile updated successfully!", type: "success" });
-
-      // Auto-dismiss success message
       setTimeout(() => setMessage(null), 5000);
     } catch (err: any) {
       const detail =
@@ -373,7 +377,7 @@ const Profile: React.FC = () => {
     setMessage(null);
   }, [profile, applyProfile]);
 
-  //  Effect
+  //  Effects ─
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
@@ -393,30 +397,29 @@ const Profile: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [editing, handleCancel, handleSave]);
 
-  //  Render States
+  //  Loading / Error states 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <div className="relative w-12 h-12 mx-auto mb-4">
-            <div className="absolute inset-0 border-4 border-blue-100 dark:border-blue-900/30 rounded-full" />
-            <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          </div>
-          <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
-            Loading profile...
-          </p>
-        </motion.div>
-      </div>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center"
+          >
+            <div className="relative w-12 h-12 mx-auto mb-4">
+              <div className="absolute inset-0 border-4 border-blue-100 dark:border-blue-900/30 rounded-full" />
+              <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+              Loading profile...
+            </p>
+          </motion.div>
+        </div>
     );
   }
 
   if (!profile) {
     return (
-      <Layout showBackButton>
         <div className="p-4 sm:p-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -432,13 +435,11 @@ const Profile: React.FC = () => {
             </p>
           </motion.div>
         </div>
-      </Layout>
     );
   }
 
-  //  Main Render
+  //  Main Render 
   return (
-    <Layout showBackButton>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -452,9 +453,12 @@ const Profile: React.FC = () => {
           </div>
 
           <div className="px-4 sm:px-8 pb-8">
-            {/* Avatar & Actions Row */}
+            {/* Avatar & Actions */}
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-14 sm:-mt-16 mb-6">
-              <motion.div whileHover={{ scale: 1.02 }} className="relative">
+              <motion.div
+                whileHover={{ scale: 1.02, rotate: -2 }}
+                className="relative"
+              >
                 <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl ring-4 ring-white dark:ring-gray-900 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl sm:text-4xl font-bold shadow-lg">
                   {getInitials(profile)}
                 </div>
@@ -505,7 +509,7 @@ const Profile: React.FC = () => {
               </div>
             </div>
 
-            {/* Identity Section */}
+            {/* Identity */}
             <div className="mb-8">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
                 {getDisplayName(profile) || (
@@ -517,27 +521,28 @@ const Profile: React.FC = () => {
               <p className="text-gray-500 dark:text-gray-400 font-medium mb-3">
                 @{profile.user.username}
               </p>
-
               <div className="flex flex-wrap gap-2">
                 {roleConfig && (
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${roleConfig.color}`}
-                  >
-                    {roleConfig.icon}
-                    {roleConfig.label}
-                  </span>
+                  <Badge
+                    icon={roleConfig.icon}
+                    label={roleConfig.label}
+                    colorClass={roleConfig.color}
+                  />
                 )}
                 {profile.department && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-800">
-                    <Building2 className="w-3 h-3" />
-                    {profile.department.charAt(0).toUpperCase() +
-                      profile.department.slice(1)}
-                  </span>
+                  <Badge
+                    icon={<Building2 className="w-3 h-3" />}
+                    label={
+                      profile.department.charAt(0).toUpperCase() +
+                      profile.department.slice(1)
+                    }
+                    colorClass="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800"
+                  />
                 )}
               </div>
             </div>
 
-            {/* Alert Messages */}
+            {/* Alerts */}
             <AnimatePresence mode="wait">
               {message && (
                 <Alert
@@ -550,7 +555,7 @@ const Profile: React.FC = () => {
 
             {/* Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-              {/* Left Column: Student Info & Bio */}
+              {/* Left Column */}
               <div className="lg:col-span-1 space-y-6">
                 <AnimatePresence>
                   {hasStudentInfo && (
@@ -599,7 +604,7 @@ const Profile: React.FC = () => {
                     label="Bio"
                     value={formData.bio}
                     field="bio"
-                    type="textarea"
+                    multiline
                     editing={editing}
                     onChange={handleFieldChange}
                     placeholder="Tell us about yourself..."
@@ -607,7 +612,7 @@ const Profile: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right Column: Personal Information */}
+              {/* Right Column */}
               <div className="lg:col-span-2">
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-5 sm:p-6 border border-gray-100 dark:border-gray-800">
                   <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-5 flex items-center gap-2">
@@ -659,7 +664,7 @@ const Profile: React.FC = () => {
                         label="Address"
                         value={formData.address}
                         field="address"
-                        type="textarea"
+                        multiline
                         editing={editing}
                         onChange={handleFieldChange}
                         icon={<MapPin className="w-4 h-4" />}
@@ -669,7 +674,7 @@ const Profile: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Keyboard Shortcuts Hint */}
+                {/* Keyboard shortcuts */}
                 {editing && (
                   <motion.p
                     initial={{ opacity: 0 }}
@@ -692,7 +697,6 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </motion.div>
-    </Layout>
   );
 };
 
