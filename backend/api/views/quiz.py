@@ -25,11 +25,9 @@ class QuestionViewSet(ModelViewSet):
     
     def perform_create(self, serializer):
         user = self.request.user
-        # role may be on user or profile; accept either
         role = getattr(user, 'role', None) or (getattr(user, 'profile', None) and user.profile.role)
         if role not in ["instructor", "teacher", "admin"]:
             raise PermissionDenied("Only instructors/teachers can add questions")
-        # if the caller didn't supply an explicit order, auto-increment
         quiz = serializer.validated_data.get('quiz')
         if 'order' not in serializer.validated_data or serializer.validated_data.get('order') is None:
             from django.db.models import Max
@@ -85,8 +83,6 @@ class QuizSubmissionViewSet(ModelViewSet):
         score = 0
         questions = {q.id: q for q in Question.objects.filter(quiz=quiz)}
         
-        # support two answer formats: list of {question_id, selected_index}
-        # or simple dict of question_id->selected_index
         if isinstance(answers, dict):
             for qid_str, sel in answers.items():
                 try:
@@ -114,7 +110,6 @@ class QuizSubmissionViewSet(ModelViewSet):
     def publish(self, request, pk=None):
         from rest_framework.response import Response
         
-        # Direct lookup like pdf action
         try:
             submission = QuizSubmission.objects.get(pk=pk)
         except QuizSubmission.DoesNotExist:
@@ -122,7 +117,6 @@ class QuizSubmissionViewSet(ModelViewSet):
         
         role = getattr(request.user, 'profile', None) and request.user.profile.role
         
-        # Permission check
         if role not in ["instructor", "admin"]:
             return Response({"detail": "Not allowed"}, status=403)
         

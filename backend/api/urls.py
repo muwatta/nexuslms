@@ -1,4 +1,3 @@
-# backend/api/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework.views import APIView
@@ -7,6 +6,7 @@ from rest_framework import permissions
 from .views import ai_proxy
 from .views.parent_views import ParentDashboardViewSet
 
+from .views.ai import AIChatView
 
 from . import views as auth_view_module
 from .views import (
@@ -60,7 +60,6 @@ router.register("subject-assignments",     SubjectAssignmentViewSet,            
 
 
 
-# ─── CLASS-BASED VIEWS ────────────────────────────────────────────────────────
 class ClassChoicesByDepartmentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -74,41 +73,35 @@ class ClassChoicesByDepartmentView(APIView):
 
 
 urlpatterns = [
-    # NEW SECURE AUTHENTICATION ENDPOINTS (RECOMMENDED - COOKIE-BASED)
     path("auth/login/",   auth_view_module.auth_views.secure_login,   name="secure-login"),
     path("auth/refresh/", auth_view_module.auth_views.secure_refresh, name="secure-refresh"),
     path("auth/logout/",  auth_view_module.auth_views.secure_logout,  name="secure-logout"),
     path("auth/status/",  auth_view_module.auth_views.auth_status,    name="auth-status"),
     
-    # LEGACY AUTHENTICATION ENDPOINTS (DEPRECATED - REMOVE AFTER MIGRATION)
-    # Keep during transition period, then remove once frontend is updated
     path("register/",      RegisterView.as_view(),              name="register"),
     path("token/",         CustomTokenObtainPairView.as_view(),  name="token_obtain_pair"),
     path("token/refresh/", CustomTokenRefreshView.as_view(),    name="token_refresh"),
 
-    # PASSWORD RESET ENDPOINTS
     path("auth/password-reset-request/", password_reset_request, name="password_reset_request"),
     path("auth/verify-otp/",             verify_otp,              name="verify_otp"),
     path("auth/password-reset-confirm/", password_reset_confirm,  name="password_reset_confirm"),
    
-    # Add to your urlpatterns:
     path("ai/chat/", ai_proxy.claude_proxy, name="ai-chat"),
-    # PERMISSIONS & ANALYTICS
     path("permissions/me/", PermissionsMeView.as_view(), name="permissions_me"),
     path("roles-and-permissions/", RolesAndPermissionsView.as_view(), name="roles_and_permissions"),
     path("analytics/student/<str:student_identifier>/", student_analytics, name="student_analytics"),
     path("analytics/course/<str:course_identifier>/", course_analytics, name="course_analytics"),
 
-    # AI & ADMIN
     path("ai/", AIView.as_view(), name="ai"),
     path("admin/sync-groups/", SyncGroupsView.as_view(), name="sync_groups"),
 
-    # CLASS CHOICES & STUDENT ENDPOINTS
     path("class-choices/", ClassChoicesByDepartmentView.as_view(), name="class_choices"),
     path("student/dashboard/",     StudentDashboardView.as_view(),  name="student-dashboard"),
     path("student/chat/",          StudentChatView.as_view(),        name="student-chat"),
     
     path("student/announcements/", AnnouncementListView.as_view(),   name="student-announcements"),
+    path('ai/chat/', AIChatView.as_view(), name='ai-chat'),
+
 ]
 
 urlpatterns += router.urls

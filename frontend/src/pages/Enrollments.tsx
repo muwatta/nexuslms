@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import api from "../api";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
   Calendar,
@@ -9,6 +9,9 @@ import {
   AlertCircle,
   Loader2,
   GraduationCap,
+  Search,
+  Filter,
+  XCircle,
 } from "lucide-react";
 
 interface Enrollment {
@@ -24,22 +27,14 @@ interface Enrollment {
   term?: string;
 }
 
-interface ValidationError {
-  field: string;
-  message: string;
-}
-
-// Check if development mode using import.meta.env (Vite) or process (Node)
 const isDev = import.meta.env?.DEV || import.meta.env?.MODE === "development";
 
 const Enrollments: React.FC = () => {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>(
-    [],
-  );
-  const [showDebug, setShowDebug] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchEnrollments();
@@ -48,22 +43,59 @@ const Enrollments: React.FC = () => {
   const fetchEnrollments = async () => {
     setLoading(true);
     setError(null);
-    setValidationErrors([]);
 
     try {
       const response = await api.get("/enrollments/");
       const data = response.data;
+      const list = Array.isArray(data) ? data : data.results || data.data || [];
 
-      // Handle different response formats
-      const enrollmentList = Array.isArray(data)
-        ? data
-        : data.results || data.data || [];
+      // Validate and clean data
+      const valid = list
+        .filter((item: any) => item.id && item.course)
+        .map((item: any) => {
+          // --- FIX: Normalise status ---
+          const rawStatus = (item.status || "").toString().toLowerCase().trim();
+          const validStatuses = [
+            "active",
+            "pending",
+            "completed",
+            "dropped",
+            "promoted",
+          ];
+          const status = validStatuses.includes(rawStatus)
+            ? rawStatus
+            : "pending";
 
-      // Validate enrollment data
-      const validatedEnrollments = validateEnrollments(enrollmentList);
-      setEnrollments(validatedEnrollments);
+          // In development, log unexpected statuses to help debug
+          if (isDev && rawStatus && !validStatuses.includes(rawStatus)) {
+            console.warn(
+              `[Enrollments] Unknown status "${item.status}" → normalised to "pending"`,
+            );
+          }
+
+          return {
+            id: item.id,
+            course: item.course,
+            course_title: item.course_title || `Course #${item.course}`,
+            course_department: item.course_department,
+            student: item.student,
+            student_name: item.student_name,
+            academic_year: item.academic_year || "N/A",
+            status: status,
+            enrolled_at: item.enrolled_at || new Date().toISOString(),
+            term: item.term,
+          };
+        });
+
+      setEnrollments(valid);
+
+      const discarded = list.filter((item: any) => !item.id || !item.course);
+      if (discarded.length > 0 && isDev) {
+        console.warn(
+          `[Enrollments] ${discarded.length} records discarded due to missing id/course`,
+        );
+      }
     } catch (err: any) {
-      console.error("Enrollment fetch error:", err);
       setError(
         err?.response?.data?.detail ||
           "Failed to load enrollments. Please try again.",
@@ -73,98 +105,80 @@ const Enrollments: React.FC = () => {
     }
   };
 
-  const validateEnrollments = (data: any[]): Enrollment[] => {
-    const errors: ValidationError[] = [];
-    const valid: Enrollment[] = [];
+  // Computed stats
+  const stats = useMemo(() => {
+    const total = enrollments.length;
+    const active = enrollments.filter((e) => e.status === "active").length;
+    const pending = enrollments.filter((e) => e.status === "pending").length;
+    const completed = enrollments.filter(
+      (e) => e.status === "completed",
+    ).length;
+    const dropped = enrollments.filter((e) => e.status === "dropped").length;
+    return { total, active, pending, completed, dropped };
+  }, [enrollments]);
 
-    data.forEach((item, index) => {
-      if (!item.id) {
-        errors.push({
-          field: `item[${index}].id`,
-          message: "Missing enrollment ID",
-        });
-      }
-      if (!item.course) {
-        errors.push({
-          field: `item[${index}].course`,
-          message: "Missing course reference",
-        });
-      }
-      if (!item.academic_year) {
-        errors.push({
-          field: `item[${index}].academic_year`,
-          message: "Missing academic year",
-        });
-      }
-
-      const validStatuses = [
-        "active",
-        "pending",
-        "completed",
-        "dropped",
-        "promoted",
-      ];
-      if (item.status && !validStatuses.includes(item.status)) {
-        errors.push({
-          field: `item[${index}].status`,
-          message: `Invalid status: ${item.status}`,
-        });
-      }
-
-      if (item.id && item.course) {
-        valid.push({
-          id: item.id,
-          course: item.course,
-          course_title: item.course_title || `Course #${item.course}`,
-          course_department: item.course_department,
-          student: item.student,
-          student_name: item.student_name,
-          academic_year: item.academic_year || "Unknown",
-          status: item.status || "pending",
-          enrolled_at: item.enrolled_at || new Date().toISOString(),
-          term: item.term,
-        });
-      }
-    });
-
-    if (errors.length > 0) {
-      console.warn("Enrollment validation errors:", errors);
-      setValidationErrors(errors);
+  // Filter and search
+  const filtered = useMemo(() => {
+    let result = enrollments;
+    if (filterStatus !== "all") {
+      result = result.filter((e) => e.status === filterStatus);
     }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((e) => e.course_title.toLowerCase().includes(q));
+    }
+    return result;
+  }, [enrollments, filterStatus, searchQuery]);
 
-    return valid;
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      active:
-        "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-      pending:
-        "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-      completed:
-        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-      dropped: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-      promoted:
-        "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300",
+  // Status badge helper
+  const getStatusConfig = (status: string) => {
+    const map: Record<string, { color: string; icon: React.ReactNode }> = {
+      active: {
+        color:
+          "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+        icon: (
+          <CheckCircle2
+            size={14}
+            className="text-emerald-600 dark:text-emerald-400"
+          />
+        ),
+      },
+      pending: {
+        color:
+          "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+        icon: (
+          <Clock size={14} className="text-amber-600 dark:text-amber-400" />
+        ),
+      },
+      completed: {
+        color:
+          "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+        icon: (
+          <GraduationCap
+            size={14}
+            className="text-blue-600 dark:text-blue-400"
+          />
+        ),
+      },
+      dropped: {
+        color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+        icon: <XCircle size={14} className="text-red-600 dark:text-red-400" />,
+      },
+      promoted: {
+        color:
+          "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300",
+        icon: (
+          <GraduationCap
+            size={14}
+            className="text-violet-600 dark:text-violet-400"
+          />
+        ),
+      },
     };
-    return colors[status] || "bg-gray-100 text-gray-700";
+    return map[status] || map.pending;
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "active":
-        return <CheckCircle2 size={16} className="text-emerald-600" />;
-      case "pending":
-        return <Clock size={16} className="text-amber-600" />;
-      case "completed":
-        return <GraduationCap size={16} className="text-blue-600" />;
-      case "dropped":
-        return <AlertCircle size={16} className="text-red-600" />;
-      default:
-        return null;
-    }
-  };
-
+  // Render loading
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -181,6 +195,7 @@ const Enrollments: React.FC = () => {
     );
   }
 
+  // Render error
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
@@ -201,134 +216,193 @@ const Enrollments: React.FC = () => {
     );
   }
 
+  // Main render
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            My Enrollments
-          </h2>
-          <p className="text-slate-600 dark:text-slate-400">
-            Manage your course enrollments and track your progress
-          </p>
-        </motion.div>
-
-        {/* Validation Warnings */}
-        {validationErrors.length > 0 && (
-          <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2">
-                <AlertCircle size={18} />
-                Data Validation Warnings ({validationErrors.length})
-              </h4>
-              {isDev && (
-                <button
-                  onClick={() => setShowDebug(!showDebug)}
-                  className="text-xs text-amber-600 hover:text-amber-800 underline"
-                >
-                  {showDebug ? "Hide" : "Show"} Debug
-                </button>
-              )}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
+                My Enrollments
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400 mt-1">
+                {enrollments.length} courses enrolled
+              </p>
             </div>
-            <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1">
-              {validationErrors.slice(0, 3).map((err, idx) => (
-                <li key={idx}>
-                  {err.field}: {err.message}
-                </li>
-              ))}
-              {validationErrors.length > 3 && !showDebug && (
-                <li>...and {validationErrors.length - 3} more issues</li>
-              )}
-            </ul>
-
-            {/* Debug Panel */}
-            {showDebug && isDev && (
-              <div className="mt-4 p-3 bg-amber-100/50 dark:bg-amber-900/30 rounded-lg">
-                <pre className="text-xs text-amber-800 dark:text-amber-200 overflow-x-auto">
-                  {JSON.stringify(validationErrors, null, 2)}
-                </pre>
+            {enrollments.length > 0 && (
+              <div className="flex items-center gap-2 text-sm bg-white dark:bg-slate-900 rounded-xl px-4 py-2 shadow-sm border border-slate-200 dark:border-slate-800">
+                <span className="text-slate-500 dark:text-slate-400">
+                  Active:
+                </span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  {stats.active}
+                </span>
+                <span className="text-slate-300 dark:text-slate-600">|</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  Pending:
+                </span>
+                <span className="font-bold text-amber-600 dark:text-amber-400">
+                  {stats.pending}
+                </span>
+                <span className="text-slate-300 dark:text-slate-600">|</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  Completed:
+                </span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">
+                  {stats.completed}
+                </span>
               </div>
             )}
           </div>
-        )}
+        </motion.div>
+
+        {/* Filters & Search */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search courses..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-slate-400" />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+              <option value="dropped">Dropped</option>
+              <option value="promoted">Promoted</option>
+            </select>
+          </div>
+        </div>
 
         {/* Enrollments List */}
-        {enrollments.length === 0 ? (
-          <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
-            <BookOpen size={48} className="text-slate-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-              No Enrollments Found
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 mb-4">
-              You haven't enrolled in any courses yet.
-            </p>
-            <a
-              href="/courses"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Browse Courses
-            </a>
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+            {enrollments.length === 0 ? (
+              <>
+                <BookOpen size={48} className="text-slate-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                  No Enrollments Found
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400 mb-4">
+                  You haven't enrolled in any courses yet.
+                </p>
+                <a
+                  href="/courses"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Browse Courses
+                </a>
+              </>
+            ) : (
+              <>
+                <AlertCircle
+                  size={48}
+                  className="text-slate-300 mx-auto mb-4"
+                />
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                  No matching enrollments
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400">
+                  Try adjusting your filters or search term.
+                </p>
+                <button
+                  onClick={() => {
+                    setFilterStatus("all");
+                    setSearchQuery("");
+                  }}
+                  className="mt-4 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                >
+                  Clear filters
+                </button>
+              </>
+            )}
           </div>
         ) : (
-          <div className="space-y-4">
-            {enrollments.map((enrollment, index) => (
-              <motion.div
-                key={enrollment.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                        {enrollment.course_title}
-                      </h3>
-                      <span
-                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                          enrollment.status,
-                        )}`}
-                      >
-                        {getStatusIcon(enrollment.status)}
-                        {enrollment.status.charAt(0).toUpperCase() +
-                          enrollment.status.slice(1)}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={14} />
-                        {enrollment.academic_year}
-                      </span>
-                      {enrollment.term && (
-                        <span className="flex items-center gap-1">
-                          <Clock size={14} />
-                          {enrollment.term}
+          <AnimatePresence>
+            <div className="space-y-4">
+              {filtered.map((enrollment, index) => {
+                const { color, icon } = getStatusConfig(enrollment.status);
+                return (
+                  <motion.div
+                    key={enrollment.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow group"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              {enrollment.course_title}
+                            </h3>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${color}`}
+                              >
+                                {icon}
+                                {enrollment.status.charAt(0).toUpperCase() +
+                                  enrollment.status.slice(1)}
+                              </span>
+                              {enrollment.course_department && (
+                                <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                                  {enrollment.course_department}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-400 mt-2">
+                          <span className="flex items-center gap-1">
+                            <Calendar size={14} />
+                            {enrollment.academic_year}
+                          </span>
+                          {enrollment.term && (
+                            <span className="flex items-center gap-1">
+                              <Clock size={14} />
+                              {enrollment.term}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-xs text-slate-400 dark:text-slate-500 block">
+                          Enrolled{" "}
+                          {new Date(
+                            enrollment.enrolled_at,
+                          ).toLocaleDateString()}
                         </span>
-                      )}
-                      {enrollment.course_department && (
-                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-xs">
-                          {enrollment.course_department}
-                        </span>
-                      )}
+                        {enrollment.student_name && (
+                          <span className="text-xs text-slate-400 dark:text-slate-500 block mt-0.5">
+                            {enrollment.student_name}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="text-right">
-                    <span className="text-xs text-slate-400 dark:text-slate-500 block">
-                      Enrolled{" "}
-                      {new Date(enrollment.enrolled_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </AnimatePresence>
         )}
       </div>
     </div>

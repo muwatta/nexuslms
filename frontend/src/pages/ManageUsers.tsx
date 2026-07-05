@@ -4,7 +4,7 @@ import api from "../api";
 import Layout from "../components/Layout";
 import { getUserData } from "../utils/authUtils";
 
-//  Types
+// ── Types ──────────────────────────────────────────────────────────────
 interface ApiUser {
   id: number;
   username: string;
@@ -79,7 +79,7 @@ const BLANK_FORM: FormData = {
   parent_email: "",
 };
 
-//  Role badge colours ─
+// ── Constants ──────────────────────────────────────────────────────────
 const ROLE_BADGE: Record<string, string> = {
   super_admin: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300",
   admin:
@@ -96,49 +96,6 @@ const ROLE_BADGE: Record<string, string> = {
 };
 
 const SUPER_ONLY_ROLES = ["admin", "super_admin"];
-
-//  Action button
-const BTN_COLORS: Record<string, string> = {
-  blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40",
-  amber:
-    "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40",
-  orange:
-    "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/40",
-  red: "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40",
-  indigo:
-    "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40",
-};
-const Btn: React.FC<{
-  color: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}> = ({ color, onClick, children }) => (
-  <button
-    onClick={onClick}
-    className={`px-2 py-1 rounded-lg text-xs font-medium transition-colors ${BTN_COLORS[color] ?? BTN_COLORS.blue}`}
-  >
-    {children}
-  </button>
-);
-
-//  Parse DRF errors
-const parseError = (err: any): string => {
-  const data = err?.response?.data;
-  if (!data) return err?.message ?? "Unknown error";
-  if (typeof data === "string") return data;
-  if (data.detail) return String(data.detail);
-  const msgs: string[] = [];
-  Object.entries(data).forEach(([field, val]) => {
-    const list = Array.isArray(val) ? val : [val];
-    list.forEach((m) => msgs.push(`${field}: ${m}`));
-  });
-  return msgs.join(" · ") || "Request failed";
-};
-
-const inputCls = "app-input disabled:opacity-50 disabled:cursor-not-allowed";
-const labelCls = "app-field-label";
-const sectionTitleCls = "app-section-title";
-
 const SUBJECT_OPTIONS: [string, string][] = [
   ["english_language", "English Language"],
   ["mathematics", "Mathematics"],
@@ -169,7 +126,49 @@ const SUBJECT_OPTIONS: [string, string][] = [
   ["digital_technologies", "Digital Technologies"],
 ];
 
-//  Component ─
+const BTN_COLORS: Record<string, string> = {
+  blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40",
+  amber:
+    "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40",
+  orange:
+    "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/40",
+  red: "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40",
+  indigo:
+    "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40",
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────
+const parseError = (err: any): string => {
+  const data = err?.response?.data;
+  if (!data) return err?.message ?? "Unknown error";
+  if (typeof data === "string") return data;
+  if (data.detail) return String(data.detail);
+  const msgs: string[] = [];
+  Object.entries(data).forEach(([field, val]) => {
+    const list = Array.isArray(val) ? val : [val];
+    list.forEach((m) => msgs.push(`${field}: ${m}`));
+  });
+  return msgs.join(" · ") || "Request failed";
+};
+
+const inputCls = "app-input disabled:opacity-50 disabled:cursor-not-allowed";
+const labelCls = "app-field-label";
+const sectionTitleCls = "app-section-title";
+
+const Btn: React.FC<{
+  color: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}> = ({ color, onClick, children }) => (
+  <button
+    onClick={onClick}
+    className={`px-2 py-1 rounded-lg text-xs font-medium transition-colors ${BTN_COLORS[color] ?? BTN_COLORS.blue}`}
+  >
+    {children}
+  </button>
+);
+
+// ── Component ──────────────────────────────────────────────────────────
 const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
   useLayout = true,
   showHeader = true,
@@ -199,6 +198,7 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [filterDept, setFilterDept] = useState("all");
+  const [showAllStats, setShowAllStats] = useState(false);
 
   const notify = (ok: boolean, msg: string) => {
     setToast({ ok, msg });
@@ -251,7 +251,7 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
       .catch(() => {});
   }, [form.department, form.role, callerDept]);
 
-  // ── Form helpers ──
+  // ── Form handlers ──
   const handleInput = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -316,7 +316,7 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
     setEditingId(null);
   };
 
-  // Submit
+  // ── Submit ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -429,7 +429,7 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
     }
   };
 
-  // Delete / Archive / Password
+  // ── Actions ──
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     const target = deleteTarget;
@@ -503,6 +503,70 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
   const canDelete = (p: UserProfile) =>
     isSuperAdmin || !SUPER_ONLY_ROLES.includes(p.role);
 
+  // ── Stats helpers ──
+  const allStatItems = stats
+    ? [
+        {
+          label: "Total",
+          value: stats.total,
+          icon: "👥",
+          color: "text-slate-700 dark:text-slate-200",
+        },
+        {
+          label: "Students",
+          value: stats.students,
+          icon: "🎓",
+          color: "text-green-700 dark:text-green-300",
+        },
+        {
+          label: "Instructors",
+          value: stats.instructors,
+          icon: "👨‍🏫",
+          color: "text-blue-700 dark:text-blue-300",
+        },
+        {
+          label: "Admins",
+          value: stats.admins,
+          icon: "⚙️",
+          color: "text-red-700 dark:text-red-300",
+        },
+        {
+          label: "Parents",
+          value: stats.parents,
+          icon: "👨‍👩‍👦",
+          color: "text-pink-700 dark:text-pink-300",
+        },
+        {
+          label: "Non-Teaching",
+          value: stats.non_teaching,
+          icon: "🛠️",
+          color: "text-cyan-700 dark:text-cyan-300",
+        },
+        {
+          label: "Western",
+          value: stats.western,
+          icon: "🌍",
+          color: "text-teal-700 dark:text-teal-300",
+        },
+        {
+          label: "Arabic",
+          value: stats.arabic,
+          icon: "🕌",
+          color: "text-emerald-700 dark:text-emerald-300",
+        },
+        {
+          label: "Programming",
+          value: stats.programming,
+          icon: "💻",
+          color: "text-purple-700 dark:text-purple-300",
+        },
+      ]
+    : [];
+  const visibleStats = showAllStats
+    ? allStatItems
+    : allStatItems.filter((s) => s.value > 0);
+
+  // ── Render ──
   const content = (
     <div
       className={
@@ -569,52 +633,40 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
 
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              {
-                label: "Total",
-                value: stats.total,
-                icon: "👥",
-                bg: "bg-slate-100 dark:bg-slate-800",
-                text: "text-slate-700 dark:text-slate-200",
-              },
-              {
-                label: "Students",
-                value: stats.students,
-                icon: "🎓",
-                bg: "bg-green-50 dark:bg-green-900/20",
-                text: "text-green-700 dark:text-green-300",
-              },
-              {
-                label: "Instructors",
-                value: stats.instructors,
-                icon: "👨‍🏫",
-                bg: "bg-blue-50 dark:bg-blue-900/20",
-                text: "text-blue-700 dark:text-blue-300",
-              },
-              {
-                label: "Admins",
-                value: stats.admins,
-                icon: "⚙️",
-                bg: "bg-red-50 dark:bg-red-900/20",
-                text: "text-red-700 dark:text-red-300",
-              },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className={`app-card flex items-center gap-3 p-4 ${s.bg}`}
-              >
-                <span className="text-2xl">{s.icon}</span>
-                <div>
-                  <p className={`text-2xl font-bold leading-none ${s.text}`}>
-                    {s.value}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    {s.label}
-                  </p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-300">
+                📊 Overview
+              </h2>
+              {allStatItems.length > 4 && (
+                <button
+                  onClick={() => setShowAllStats(!showAllStats)}
+                  className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                >
+                  {showAllStats
+                    ? "Show less"
+                    : `Show ${allStatItems.length - visibleStats.length} more`}
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {visibleStats.map((s) => (
+                <div
+                  key={s.label}
+                  className="app-card flex items-center gap-3 p-4 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <span className="text-2xl">{s.icon}</span>
+                  <div>
+                    <p className={`text-2xl font-bold leading-none ${s.color}`}>
+                      {s.value}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {s.label}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
@@ -630,6 +682,14 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
             placeholder="🔍  Search name, username, email, student ID…"
             className={`${inputCls} flex-1`}
           />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0"
+            >
+              ✕ Clear
+            </button>
+          )}
           <label className="sr-only" htmlFor="filter-role">
             Filter by role
           </label>
@@ -637,13 +697,13 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
             id="filter-role"
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
-            className={inputCls + " sm:w-40"}
+            className={`${inputCls} sm:w-40`}
             aria-label="Filter by role"
           >
             <option value="all">All Roles</option>
             <option value="student">Students</option>
             <option value="teacher">Teachers</option>
-            <option value="non_teaching">Non-Teaching Staff</option>
+            <option value="non_teaching">Non-Teaching</option>
             <option value="school_admin">School Admins</option>
             <option value="admin">Admins</option>
             <option value="parent">Parents</option>
@@ -658,7 +718,7 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
                 id="filter-department"
                 value={filterDept}
                 onChange={(e) => setFilterDept(e.target.value)}
-                className={inputCls + " sm:w-40"}
+                className={`${inputCls} sm:w-40`}
                 aria-label="Filter by department"
               >
                 <option value="all">All Depts</option>
@@ -725,7 +785,9 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
                         key={p.id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${p.is_archived ? "opacity-40" : ""}`}
+                        className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                          p.is_archived ? "opacity-40" : ""
+                        }`}
                       >
                         <td className="px-4 py-3">
                           <input
@@ -756,7 +818,9 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
                         </td>
                         <td className="px-4 py-3">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[p.role] ?? "bg-gray-100 text-gray-700"}`}
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              ROLE_BADGE[p.role] ?? "bg-gray-100 text-gray-700"
+                            }`}
                           >
                             {p.role.replace(/_/g, " ")}
                           </span>
@@ -856,7 +920,9 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
                             {fullName(p.user)}
                           </p>
                           <span
-                            className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[p.role] ?? "bg-gray-100 text-gray-700"}`}
+                            className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
+                              ROLE_BADGE[p.role] ?? "bg-gray-100 text-gray-700"
+                            }`}
                           >
                             {p.role.replace(/_/g, " ")}
                           </span>
@@ -898,7 +964,7 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
           )}
         </div>
 
-        {/* CREATE / EDIT MODAL */}
+        {/* ── Modal: Create / Edit ── */}
         <AnimatePresence>
           {showForm && (
             <motion.div
@@ -987,8 +1053,7 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
                             "New Password — leave blank to keep current"
                           ) : (
                             <>
-                              <>Password</>{" "}
-                              <span className="text-red-500">*</span>
+                              Password <span className="text-red-500">*</span>
                             </>
                           )}
                         </label>
@@ -1110,8 +1175,7 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
                                 ))}
                               </select>
                               <p className="text-[10px] text-gray-400 mt-1">
-                                Responsible for all students in this class. Can
-                                review results and generate report cards.
+                                Responsible for all students in this class.
                               </p>
                             </div>
                           )}
@@ -1185,13 +1249,9 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
                                     {form.teacher_subjects.length !== 1
                                       ? "s"
                                       : ""}{" "}
-                                    selected: {form.teacher_subjects.join(", ")}
+                                    selected
                                   </p>
                                 )}
-                                <p className="text-[10px] text-gray-400 mt-0.5">
-                                  Students in the selected class will be
-                                  assigned to this teacher for these subjects.
-                                </p>
                               </div>
                             </>
                           )}
@@ -1229,14 +1289,10 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
                             name="class_section"
                             value={form.class_section}
                             onChange={handleInput}
-                            placeholder="e.g. A  or  leave blank"
+                            placeholder="e.g. A"
                             maxLength={10}
                             className={inputCls}
                           />
-                          <p className="text-[10px] text-gray-400 mt-1">
-                            Sections are organisational only. Same subjects for
-                            all sections of a class.
-                          </p>
                         </div>
                       )}
                     </div>
@@ -1322,7 +1378,7 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
           )}
         </AnimatePresence>
 
-        {/* DELETE CONFIRM MODAL */}
+        {/* ── Modal: Delete Confirm ── */}
         <AnimatePresence>
           {deleteTarget && (
             <motion.div
@@ -1373,7 +1429,7 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
           )}
         </AnimatePresence>
 
-        {/* SUBJECT ASSIGNMENT MODAL */}
+        {/* ── Modal: Subject Assignments ── */}
         <AnimatePresence>
           {subjectModal && (
             <motion.div
@@ -1487,10 +1543,10 @@ const ManageUsers: React.FC<{ useLayout?: boolean; showHeader?: boolean }> = ({
       </div>
     </div>
   );
+
   if (useLayout) {
     return <Layout showBackButton>{content}</Layout>;
   }
-
   return <div className="space-y-4">{content}</div>;
 };
 
