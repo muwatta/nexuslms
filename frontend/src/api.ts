@@ -1,4 +1,3 @@
-// frontend/src/api.ts
 import axios from "axios";
 
 const api = axios.create({
@@ -59,7 +58,6 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
-        // Refresh failed, clear local state and redirect to login
         localStorage.removeItem("user_data");
         window.location.href = "/login";
         return Promise.reject(refreshError);

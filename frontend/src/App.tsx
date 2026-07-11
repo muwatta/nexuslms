@@ -16,7 +16,6 @@ import { getDashboardRouteByRole, getUserData } from "./utils/authUtils";
 const lazy = (fn: () => Promise<{ default: React.ComponentType<any> }>) =>
   React.lazy(fn);
 
-// Public / marketing
 const Landing = lazy(() => import("./pages/Landing"));
 const About = lazy(() => import("./pages/About"));
 const Programs = lazy(() => import("./pages/Programs"));
@@ -25,29 +24,24 @@ const Contact = lazy(() => import("./pages/Contact"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const PracticeQuestions = lazy(() => import("./pages/PracticeQuestions"));
 
-// Auth
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const Unauthorized = lazy(() => import("./pages/Unauthorized"));
 
-// Core generic
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Profile = lazy(() => import("./pages/Profile"));
 const AIHelp = lazy(() => import("./pages/AIHelp"));
 
-// Admin
 const SuperAdminPortal = lazy(() => import("./pages/SuperAdminPortal"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const ManageUsers = lazy(() => import("./pages/ManageUsers"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 
-// School admin (department)
 const WesternDashboard = lazy(() => import("./pages/WesternDashboard"));
 const ArabicDashboard = lazy(() => import("./pages/ArabicDashboard"));
 const ProgrammingDashboard = lazy(() => import("./pages/ProgrammingDashboard"));
 
-// Teacher
 const TeacherDashboard = lazy(() => import("./pages/InstructorDashboard"));
 const SubjectTeacherDashboard = lazy(
   () => import("./pages/SubjectInstructorDashboard"),
@@ -56,11 +50,9 @@ const ClassTeacherDashboard = lazy(
   () => import("./pages/ClassInstructorDashboard"),
 );
 
-// Student / Parent
 const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
 const ParentPortal = lazy(() => import("./pages/ParentPortal"));
 
-// Features
 const Courses = lazy(() => import("./pages/Courses"));
 const Enrollments = lazy(() => import("./pages/Enrollments"));
 const Assignments = lazy(() => import("./pages/Assignments"));
@@ -128,12 +120,10 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-// Page wrapper (ErrorBoundary per route
 const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <ErrorBoundary>{children}</ErrorBoundary>
 );
 
-// Smart home router — redirects logged-in users to their dashboard─
 const HomeRouter: React.FC = () => {
   const userData = getUserData();
   if (userData?.role) {
@@ -147,7 +137,6 @@ const HomeRouter: React.FC = () => {
   return <Landing />;
 };
 
-// Generic /dashboard → role-specific redirect─
 const DashboardRouter: React.FC = () => {
   const userData = getUserData();
   if (userData?.role) {
@@ -182,7 +171,6 @@ const NotFound: React.FC = () => (
   </div>
 );
 
-// Apphel─
 function App() {
   return (
     <BrowserRouter>

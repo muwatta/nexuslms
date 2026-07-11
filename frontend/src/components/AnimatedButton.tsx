@@ -1,13 +1,20 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, MotionProps } from "framer-motion";
+import { clsx } from "clsx";
 
-interface AnimatedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+type AnimatedButtonProps = {
   children: React.ReactNode;
   variant?: "primary" | "secondary" | "danger" | "success";
   size?: "sm" | "md" | "lg";
-  icon?: string;
+  icon?: React.ReactNode;
   fullWidth?: boolean;
-}
+  whileHover?: MotionProps["whileHover"];
+  whileTap?: MotionProps["whileTap"];
+  transition?: MotionProps["transition"];
+} & Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "children" | "onAnimationStart" | "onAnimationEnd"
+>;
 
 const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButtonProps>(
   (
@@ -17,8 +24,12 @@ const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButtonProps>(
       size = "md",
       icon,
       fullWidth = false,
+      whileHover = { scale: 1.04 },
+      whileTap = { scale: 0.96 },
+      transition = { type: "spring", stiffness: 400, damping: 17 },
       className = "",
-      ...props
+      disabled = false,
+      ...rest
     },
     ref,
   ) => {
@@ -39,33 +50,32 @@ const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButtonProps>(
       lg: "px-6 py-3 text-lg",
     };
 
+    const baseClasses = clsx(
+      "inline-flex items-center space-x-2 rounded-lg font-medium transition-all",
+      variantClasses[variant],
+      sizeClasses[size],
+      fullWidth && "w-full justify-center",
+      disabled && "opacity-60 cursor-not-allowed pointer-events-none",
+      className,
+    );
+
     return (
       <motion.button
         ref={ref}
-        whileHover={{
-          scale: 1.05,
-          boxShadow: "0 10px 25px rgba(0, 0, 0, 0.2)",
-        }}
-        whileTap={{
-          scale: 0.98,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 400,
-          damping: 17,
-        }}
-        className={`inline-flex items-center space-x-2 rounded-lg font-medium transition-all ${
-          variantClasses[variant]
-        } ${sizeClasses[size]} ${fullWidth ? "w-full justify-center" : ""} ${className}`}
-        {...props}
+        whileHover={!disabled ? whileHover : undefined}
+        whileTap={!disabled ? whileTap : undefined}
+        transition={transition}
+        className={baseClasses}
+        disabled={disabled}
+        {...(rest as any)} // 👈 cast to any to avoid type conflicts with motion
       >
-        {icon && <span className="text-lg">{icon}</span>}
+        {icon && <span className="shrink-0">{icon}</span>}
         <span>{children}</span>
       </motion.button>
     );
   },
 );
-
+ 
 AnimatedButton.displayName = "AnimatedButton";
 
 export default AnimatedButton;
