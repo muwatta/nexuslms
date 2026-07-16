@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
+  Link,
   useLocation,
 } from "react-router-dom";
 import { PageLoader } from "./components/Skeleton";
@@ -95,26 +96,26 @@ class ErrorBoundary extends React.Component<
     if (!this.state.hasError) return this.props.children;
     if (this.props.fallback !== undefined) return this.props.fallback;
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-10 font-sans">
-        <p className="text-5xl mb-4">💥</p>
-        <h2 className="text-lg font-bold text-red-600 mb-2">
-          Something went wrong loading this page.
-        </h2>
-        <p className="text-sm text-gray-400 mb-6 max-w-sm">
-          {this.state.error?.message}
-        </p>
-        <button
-          onClick={() => this.setState({ hasError: false })}
-          className="mr-3 px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-        >
-          Try Again
-        </button>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-5 py-2 text-sm font-semibold border border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 transition-colors"
-        >
-          Reload Page
-        </button>
+      <div className="flex min-h-[60vh] items-center justify-center p-6 font-sans">
+        <div className="app-card w-full max-w-md p-8 text-center">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-2xl dark:bg-rose-500/15">
+            !
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            This page needs another try
+          </h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">
+            Something interrupted the page while it was loading. Your work has not been changed.
+          </p>
+          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+            <button onClick={() => this.setState({ hasError: false })} className="app-btn app-btn-primary">
+              Try again
+            </button>
+            <button onClick={() => window.location.reload()} className="app-btn app-btn-secondary">
+              Reload page
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -152,22 +153,21 @@ const DashboardRouter: React.FC = () => {
 
 // 40pag
 const NotFound: React.FC = () => (
-  <div className="min-h-screen flex flex-col items-center justify-center text-center p-10">
-    <p className="text-8xl mb-4 font-black text-gray-200 dark:text-gray-800">
-      404
-    </p>
-    <h1 className="text-2xl font-black text-gray-800 dark:text-gray-200 mb-2">
-      Page not found
-    </h1>
-    <p className="text-gray-400 mb-8 text-sm">
-      The page you're looking for doesn't exist or was moved.
-    </p>
-    <a
-      href="/"
-      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors text-sm"
-    >
-      Go Home
-    </a>
+  <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+    <div className="app-card max-w-md p-8 sm:p-10">
+      <p className="text-8xl font-black tracking-tight text-teal-500/20 dark:text-teal-400/20">
+        404
+      </p>
+      <h1 className="mt-2 text-2xl font-black text-slate-800 dark:text-slate-100">
+        Page not found
+      </h1>
+      <p className="mb-7 mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+        The page you're looking for doesn't exist or was moved.
+      </p>
+      <Link to="/" className="app-btn app-btn-primary px-6 py-3">
+        Go Home
+      </Link>
+    </div>
   </div>
 );
 
@@ -203,7 +203,7 @@ const AppShell: React.FC = () => {
   const showNavbar = isLoggedIn && !isSelfLayout;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
+    <div className="app-shell transition-colors duration-300">
       {showNavbar && <Navbar />}
 
       <main className={showNavbar ? "pt-[60px]" : ""}>

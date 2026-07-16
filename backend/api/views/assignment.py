@@ -2,6 +2,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 
 from api.core.models import Assignment, AssignmentSubmission, Course
 from api.pdf_utils import generate_assignment_pdf
@@ -94,7 +95,7 @@ class AssignmentViewSet(ModelViewSet):
             user_role = request.user.profile.role
         except Exception:
             user_role = getattr(request.user, 'role', None)
-        if user_role not in ["teacher", "instructor", "admin"]:
+        if user_role not in ["teacher", "admin", "school_admin", "super_admin"]:
             return Response({"detail": "Not allowed"}, status=403)
 
         try:
@@ -139,6 +140,14 @@ class AssignmentViewSet(ModelViewSet):
                     profile = Profile.objects.filter(user=u).first()
             if not profile:
                 errors.append({"row": i, "error": "student not found"})
+                continue
+            if profile.role != "student":
+                errors.append({"row": i, "error": "profile is not a student"})
+                continue
+            if not assignment.course.enrollments.filter(
+                student=profile, status="active"
+            ).exists():
+                errors.append({"row": i, "error": "student is not enrolled in this course"})
                 continue
             try:
                 grade = float(grade_raw) if grade_raw != '' else None

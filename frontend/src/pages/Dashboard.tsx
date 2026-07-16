@@ -3,20 +3,19 @@ import api from "../api";
 import WesternDashboard from "./WesternDashboard";
 import ArabicDashboard from "./ArabicDashboard";
 import DigitalDashboard from "./ProgrammingDashboard";
+import { getUserData } from "../utils/authUtils";
 
 const Dashboard: React.FC = () => {
-  const [department, setDepartment] = useState<string | null>(null);
+  const [department, setDepartment] = useState<string | null>(
+    () => getUserData()?.department ?? null,
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api
-      .get("/profiles/")
+      .get("/profiles/me/")
       .then((res) => {
-        if (res.data && res.data.length > 0) {
-          setDepartment(res.data[0].department || "western");
-        } else {
-          setDepartment("western");
-        }
+        setDepartment(res.data?.department || "western");
       })
       .catch(() => {
         setDepartment("western");
@@ -26,8 +25,16 @@ const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg text-gray-600">Loading your dashboard...</p>
+      <div className="flex min-h-[60vh] items-center justify-center px-6">
+        <div className="app-card w-full max-w-sm p-8 text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-teal-500 border-t-transparent" />
+          <p className="font-semibold text-slate-800 dark:text-slate-100">
+            Preparing your dashboard
+          </p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Loading your learning space…
+          </p>
+        </div>
       </div>
     );
   }

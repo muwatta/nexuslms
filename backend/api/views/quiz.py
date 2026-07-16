@@ -23,7 +23,9 @@ def accessible_courses(user):
     if profile.role == "teacher":
         return Course.objects.filter(department=profile.department)
     if profile.role == "student":
-        return Course.objects.filter(enrollments__student=profile, enrollments__status="active")
+        return Course.objects.filter(
+            enrollments__student=profile, enrollments__status="active"
+        ).distinct()
     return Course.objects.none()
 
 
@@ -37,7 +39,11 @@ class QuizViewSet(ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        return Quiz.objects.filter(course__in=accessible_courses(self.request.user)).prefetch_related("questions")
+        return (
+            Quiz.objects.filter(course__in=accessible_courses(self.request.user))
+            .prefetch_related("questions")
+            .order_by("-created_at", "-id")
+        )
 
     def perform_create(self, serializer):
         if not accessible_courses(self.request.user).filter(pk=serializer.validated_data["course"].pk).exists():
@@ -63,9 +69,6 @@ class QuestionViewSet(ModelViewSet):
     
     def perform_create(self, serializer):
         user = self.request.user
-        role = getattr(user, 'role', None) or (getattr(user, 'profile', None) and user.profile.role)
-        if role not in ["instructor", "teacher", "admin"]:
-            raise PermissionDenied("Only instructors/teachers can add questions")
         quiz = serializer.validated_data.get('quiz')
         if not accessible_courses(user).filter(pk=quiz.course_id).exists():
             raise PermissionDenied("You cannot add questions to this quiz.")
@@ -91,17 +94,11 @@ class QuizSubmissionViewSet(ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         role = getattr(user, 'profile', None) and user.profile.role
-        if role in {'instructor', 'teacher'}:
-            try:
-                user_profile = user.profile
-                instructor_course_ids = Course.objects.filter(instructor=user_profile).values_list('id', flat=True)
-                quiz_ids = Quiz.objects.filter(course_id__in=instructor_course_ids).values_list('id', flat=True)
-                return qs.filter(quiz_id__in=quiz_ids)
-            except Exception:
-                return qs.none()
+        if role == 'teacher':
+            return qs.filter(quiz__course__department=user.profile.department)
         if role in {'admin', 'super_admin'}:
             return qs
-        return qs.filter(published=True)
+        return qs.filter(student=user.profile, published=True)
 
     def perform_create(self, serializer):
         user_profile = self.request.user.profile
@@ -111,6 +108,9 @@ class QuizSubmissionViewSet(ModelViewSet):
         
         quiz = serializer.validated_data.get('quiz')
         answers = serializer.validated_data.get('answers', [])
+
+        if not accessible_courses(self.request.user).filter(pk=quiz.pk).exists():
+            raise PermissionDenied("You are not enrolled in this quiz's course")
         
         if QuizSubmission.objects.filter(student=user_profile, quiz=quiz).exists():
             raise ValidationError("Already submitted this quiz")
