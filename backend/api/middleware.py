@@ -12,6 +12,8 @@ class RateLimitMiddleware:
         '/api/auth/login/':                   (5,  300),   
         '/api/auth/refresh/':                 (10,  60),   
         '/api/auth/password-reset-request/':  (3, 3600),   
+        '/api/auth/verify-otp/':               (5, 3600),
+        '/api/auth/password-reset-confirm/':   (5, 3600),
         '/api/token/':                        (5,  300),  
     }
 
@@ -19,6 +21,8 @@ class RateLimitMiddleware:
         '/api/auth/login/':                   (100, 300),  
         '/api/auth/refresh/':                 (200,  60),  
         '/api/auth/password-reset-request/':  (20, 3600),
+        '/api/auth/verify-otp/':               (50, 3600),
+        '/api/auth/password-reset-confirm/':   (50, 3600),
         '/api/token/':                        (100, 300),
     }
 

@@ -5,25 +5,13 @@ services:
     build: ../backend
     restart: always
     environment:
-      - DJANGO_SETTINGS_MODULE=nexuslms.settings.production
+      - DJANGO_SETTINGS_MODULE=nexuslms.settings.prod
       - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
       - SECRET_KEY=${SECRET_KEY}
     ports:
       - "8000:8000"
     depends_on:
       - db
-      - redis
-
-  worker:
-    build: ../backend
-    command: celery -A nexuslms worker -l info
-    depends_on:
-      - redis
-      - db
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
 
   db:
     image: postgres:15
@@ -32,7 +20,3 @@ services:
       POSTGRES_DB: lms_db
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-
-  redis:
-    image: redis:7
-    restart: always

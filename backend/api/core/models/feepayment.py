@@ -2,6 +2,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+import uuid
 
 class FeePayment(models.Model):
     STATUS_CHOICES = [
@@ -20,6 +21,8 @@ class FeePayment(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     due_date = models.DateField()
     last_payment_date = models.DateTimeField(null=True, blank=True)
+    reference = models.CharField(max_length=100, unique=True, default=uuid.uuid4, editable=False)
+    paystack_response = models.JSONField(null=True, blank=True)
 
     class Meta:
         ordering = ["-due_date"]

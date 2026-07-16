@@ -9,14 +9,54 @@ from api.serializers import (
     AssignmentSerializer,
     AssignmentSubmissionSerializer,
 )
+from api.permissions import IsAdminOrTeacher
+
+
+def accessible_assignments(user):
+    profile = getattr(user, "profile", None)
+    if not profile:
+        return Assignment.objects.none()
+    if user.is_superuser or profile.role in {"admin", "super_admin"}:
+        return Assignment.objects.all()
+    if profile.role in {"school_admin", "teacher"}:
+        return Assignment.objects.filter(course__department=profile.department)
+    if profile.role == "student":
+        return Assignment.objects.filter(course__enrollments__student=profile, course__enrollments__status="active").distinct()
+    return Assignment.objects.none()
+
+
+def can_manage_course(user, course):
+    profile = getattr(user, "profile", None)
+    if not profile:
+        return False
+    if user.is_superuser or profile.role in {"admin", "super_admin"}:
+        return True
+    return profile.role in {"school_admin", "teacher"} and profile.department == course.department
 
 
 class AssignmentViewSet(ModelViewSet):
-    queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
-    permission_classes = [IsAuthenticated]
 
-    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated])
+    def get_permissions(self):
+        if self.action in {"create", "update", "partial_update", "destroy", "download_template", "upload_results"}:
+            return [IsAuthenticated(), IsAdminOrTeacher()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        return accessible_assignments(self.request.user).select_related("course")
+
+    def perform_create(self, serializer):
+        course = serializer.validated_data["course"]
+        if not can_manage_course(self.request.user, course):
+            raise PermissionDenied("You cannot create an assignment for this course.")
+        serializer.save()
+
+    def perform_update(self, serializer):
+        if not accessible_assignments(self.request.user).filter(pk=serializer.instance.pk).exists():
+            raise PermissionDenied("You cannot modify this assignment.")
+        serializer.save()
+
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated, IsAdminOrTeacher])
     def download_template(self, request, pk=None):
         """Download a CSV template listing enrolled students for this assignment's course."""
         import csv
@@ -40,7 +80,7 @@ class AssignmentViewSet(ModelViewSet):
         assignment = self.get_object()
         return generate_assignment_pdf(assignment)
 
-    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsAdminOrTeacher])
     def upload_results(self, request, pk=None):
         """Upload CSV with columns: student_username or student_id and grade."""
         import csv
@@ -129,12 +169,20 @@ class AssignmentSubmissionViewSet(ModelViewSet):
     serializer_class = AssignmentSubmissionSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        if self.action in {"update", "partial_update", "destroy", "publish"}:
+            return [IsAuthenticated(), IsAdminOrTeacher()]
+        return [IsAuthenticated()]
+
     def get_queryset(self):
         qs = super().get_queryset()
         user = self.request.user
-        if user.role in ["teacher", "admin"]:
+        role = getattr(getattr(user, "profile", None), "role", "")
+        if role in ["teacher", "school_admin"]:
+            return qs.filter(assignment__course__department=user.profile.department)
+        if role in ["admin", "super_admin"]:
             return qs
-        elif user.role == "instructor":
+        elif role == "instructor":
             try:
                 user_profile = user.profile
                 # Get assignments from courses taught by this instructor
@@ -143,15 +191,25 @@ class AssignmentSubmissionViewSet(ModelViewSet):
                 return qs.filter(assignment_id__in=assignment_ids)
             except:
                 return qs.none()
-        return qs.filter(published=True)
+        return qs.filter(student__user=user, status="published")
 
-    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    def perform_create(self, serializer):
+        profile = getattr(self.request.user, "profile", None)
+        if not profile or profile.role != "student":
+            raise PermissionDenied("Only students can submit assignments.")
+        assignment = serializer.validated_data["assignment"]
+        if not accessible_assignments(self.request.user).filter(pk=assignment.pk).exists():
+            raise PermissionDenied("You are not enrolled in this assignment's course.")
+        serializer.save(student=profile)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsAdminOrTeacher])
     def publish(self, request, pk=None):
         sub = self.get_object()
-        if request.user.role not in ["teacher", "instructor", "admin"]:
+        role = getattr(getattr(request.user, "profile", None), "role", "")
+        if role not in ["teacher", "admin", "school_admin", "super_admin"]:
             return Response({"detail": "Not allowed"}, status=403)
-        sub.published = True
-        sub.save()
+        sub.status = "published"
+        sub.save(update_fields=["status"])
         return Response({"status": "published"})
 
     @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated])
@@ -159,7 +217,8 @@ class AssignmentSubmissionViewSet(ModelViewSet):
         from django.http import HttpResponse
         from reportlab.pdfgen import canvas
         sub = self.get_object()
-        if not sub.published and request.user.role not in ["teacher", "instructor", "admin"]:
+        role = getattr(getattr(request.user, "profile", None), "role", "")
+        if sub.status != "published" and role not in ["teacher", "admin", "school_admin", "super_admin"]:
             return Response({"detail": "Not available"}, status=403)
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="assignment_{sub.id}.pdf"'

@@ -9,14 +9,14 @@ django.setup()
 
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack
 from api import routing  # Import after django.setup()
+from api.ws_auth import CookieJWTAuthMiddleware
 
 django_asgi_app = get_asgi_application()
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
-    "websocket": AuthMiddlewareStack(
+    "websocket": CookieJWTAuthMiddleware(
         URLRouter(routing.websocket_urlpatterns)
     ),
 })

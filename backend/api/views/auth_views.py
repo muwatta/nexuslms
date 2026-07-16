@@ -5,6 +5,7 @@ import string
 import datetime
 import logging
 import traceback
+from django.contrib.auth.hashers import make_password, check_password
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
@@ -119,7 +120,7 @@ def password_reset_request(request):
     otp = generate_otp()
     PasswordResetOTP.objects.update_or_create(
         user=user,
-        defaults={"otp": otp, "created_at": timezone.now(), "is_used": False},
+        defaults={"otp": make_password(otp), "created_at": timezone.now(), "is_used": False},
     )
 
     try:
@@ -154,7 +155,9 @@ def verify_otp(request):
 
     try:
         user       = User.objects.get(email=email)
-        otp_record = PasswordResetOTP.objects.get(user=user, otp=otp, is_used=False)
+        otp_record = PasswordResetOTP.objects.get(user=user, is_used=False)
+        if not check_password(otp, otp_record.otp):
+            raise PasswordResetOTP.DoesNotExist
         if otp_record.is_expired():
             return Response(
                 {"error": "Verification code has expired. Please request a new one."},
@@ -187,7 +190,9 @@ def password_reset_confirm(request):
 
     try:
         user       = User.objects.get(email=email)
-        otp_record = PasswordResetOTP.objects.get(user=user, otp=otp, is_used=False)
+        otp_record = PasswordResetOTP.objects.get(user=user, is_used=False)
+        if not check_password(otp, otp_record.otp):
+            raise PasswordResetOTP.DoesNotExist
         if otp_record.is_expired():
             return Response(
                 {"error": "Verification code has expired"},
@@ -281,18 +286,17 @@ def secure_refresh(request):
         return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
 
     try:
-        refresh          = CustomRefreshToken(refresh_token)
-
-        # FIX #7: rotate — generates a brand-new refresh token and blacklists the old one
-        refresh.set_jti()   # new unique jti
-        refresh.set_exp()   # reset 7-day expiry from now
-        new_access  = str(refresh.access_token)
+        old_refresh = CustomRefreshToken(refresh_token)
+        user_id = old_refresh.payload.get("user_id")
+        user = User.objects.get(pk=user_id, is_active=True)
+        old_refresh.blacklist()
+        refresh = CustomRefreshToken.for_user(user)
+        new_access = str(refresh.access_token)
         new_refresh = str(refresh)
 
         response_data = {"message": "Token refreshed successfully"}
 
         if request.data.get("include_user"):
-            user_id = refresh.payload.get("user_id")
             try:
                 u = User.objects.get(pk=user_id)
                 response_data["user"] = {"id": u.id, "username": u.username}

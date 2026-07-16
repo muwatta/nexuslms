@@ -8,6 +8,14 @@ class QuestionSerializer(serializers.ModelSerializer):
         fields = ["id", "quiz", "text", "choices", "correct_index", "marks"]
         read_only_fields = ["id"]
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        profile = getattr(getattr(request, "user", None), "profile", None)
+        if profile and profile.role == "student":
+            data.pop("correct_index", None)
+        return data
+
 
 class QuizSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)

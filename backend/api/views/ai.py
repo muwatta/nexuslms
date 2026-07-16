@@ -3,8 +3,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, JSONParser
-from PIL import Image
-import io
 from google import genai
 from google.genai import types
 
@@ -36,6 +34,10 @@ class AIView(APIView):
                 contents.append("Describe this image in detail.")
 
             if image_file:
+                if image_file.size > 5 * 1024 * 1024:
+                    return Response({"error": "Images must be 5 MB or smaller."}, status=400)
+                if image_file.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+                    return Response({"error": "Unsupported image type."}, status=400)
                 try:
                     img_bytes = image_file.read()
                     contents.append(types.Part.from_bytes(
@@ -81,9 +83,7 @@ class AIView(APIView):
                         "error": "No available AI model found. Please try again later."
                     }, status=500)
                 else:
-                    return Response({"error": str(e)}, status=500)
+                    return Response({"error": "AI service request failed."}, status=502)
 
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return Response({"error": f"Internal error: {str(e)}"}, status=500)
+        except Exception:
+            return Response({"error": "AI service is temporarily unavailable."}, status=500)

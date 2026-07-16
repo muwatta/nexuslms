@@ -9,19 +9,57 @@ from api.core.models import Quiz, QuizSubmission, Question, Course
 from api.pdf_utils import generate_quiz_result_pdf
 from api.serializers import QuizSerializer, QuizSubmissionSerializer, QuestionSerializer
 from api.filters import QuizFilter
+from api.permissions import IsAdminOrTeacher
+
+
+def accessible_courses(user):
+    profile = getattr(user, "profile", None)
+    if not profile:
+        return Course.objects.none()
+    if user.is_superuser or profile.role in {"admin", "super_admin"}:
+        return Course.objects.all()
+    if profile.role == "school_admin":
+        return Course.objects.filter(department=profile.department)
+    if profile.role == "teacher":
+        return Course.objects.filter(department=profile.department)
+    if profile.role == "student":
+        return Course.objects.filter(enrollments__student=profile, enrollments__status="active")
+    return Course.objects.none()
 
 
 class QuizViewSet(ModelViewSet):
-    queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
-    permission_classes = [IsAuthenticated]
     filterset_class = QuizFilter
+
+    def get_permissions(self):
+        if self.action in {"create", "update", "partial_update", "destroy"}:
+            return [IsAuthenticated(), IsAdminOrTeacher()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        return Quiz.objects.filter(course__in=accessible_courses(self.request.user)).prefetch_related("questions")
+
+    def perform_create(self, serializer):
+        if not accessible_courses(self.request.user).filter(pk=serializer.validated_data["course"].pk).exists():
+            raise PermissionDenied("You cannot create a quiz for this course.")
+        serializer.save()
+
+    def perform_update(self, serializer):
+        if not accessible_courses(self.request.user).filter(pk=serializer.instance.course_id).exists():
+            raise PermissionDenied("You cannot modify this quiz.")
+        serializer.save()
 
 
 class QuestionViewSet(ModelViewSet):
-    queryset = Question.objects.all()
     serializer_class = QuestionSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in {"create", "update", "partial_update", "destroy"}:
+            return [IsAuthenticated(), IsAdminOrTeacher()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        return Question.objects.filter(quiz__course__in=accessible_courses(self.request.user))
     
     def perform_create(self, serializer):
         user = self.request.user
@@ -29,12 +67,19 @@ class QuestionViewSet(ModelViewSet):
         if role not in ["instructor", "teacher", "admin"]:
             raise PermissionDenied("Only instructors/teachers can add questions")
         quiz = serializer.validated_data.get('quiz')
+        if not accessible_courses(user).filter(pk=quiz.course_id).exists():
+            raise PermissionDenied("You cannot add questions to this quiz.")
         if 'order' not in serializer.validated_data or serializer.validated_data.get('order') is None:
             from django.db.models import Max
             max_ord = Question.objects.filter(quiz=quiz).aggregate(Max('order'))['order__max']
             serializer.save(order=(max_ord or 0) + 1)
         else:
             serializer.save()
+
+    def perform_update(self, serializer):
+        if not accessible_courses(self.request.user).filter(pk=serializer.instance.quiz.course_id).exists():
+            raise PermissionDenied("You cannot modify this question.")
+        serializer.save()
 
 
 class QuizSubmissionViewSet(ModelViewSet):
@@ -46,7 +91,7 @@ class QuizSubmissionViewSet(ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         role = getattr(user, 'profile', None) and user.profile.role
-        if role == 'instructor':
+        if role in {'instructor', 'teacher'}:
             try:
                 user_profile = user.profile
                 instructor_course_ids = Course.objects.filter(instructor=user_profile).values_list('id', flat=True)
@@ -54,7 +99,7 @@ class QuizSubmissionViewSet(ModelViewSet):
                 return qs.filter(quiz_id__in=quiz_ids)
             except Exception:
                 return qs.none()
-        if role == 'admin':
+        if role in {'admin', 'super_admin'}:
             return qs
         return qs.filter(published=True)
 

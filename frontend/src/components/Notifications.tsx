@@ -10,12 +10,6 @@ const Notifications: React.FC = () => {
   const hasConnectedRef = useRef(false); // Track if we've ever connected
 
   const connectWebSocket = useCallback(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      console.log("No token, skipping WebSocket connection");
-      return;
-    }
-
     // Prevent multiple connections
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       console.log("WebSocket already open");
@@ -33,10 +27,7 @@ const Notifications: React.FC = () => {
     }
 
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const host =
-      window.location.hostname === "localhost"
-        ? "localhost:8000"
-        : window.location.host.replace(/:\d+/, ":8000");
+    const host = window.location.host;
     const url = `${protocol}://${host}/ws/notifications/`;
 
     console.log(

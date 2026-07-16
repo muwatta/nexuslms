@@ -8,4 +8,4 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeePayment
         fields = "__all__"
-        read_only_fields = ("paystack_response",)
+        read_only_fields = ("student", "balance", "status", "last_payment_date", "reference", "paystack_response")
