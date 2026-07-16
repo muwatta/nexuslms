@@ -285,7 +285,6 @@ class QuizSubmissionAdmin(admin.ModelAdmin):
 
     @admin.display(description="Answers")
     def answers_display(self, obj):
-        """Render the JSON answers as a readable table in the detail view."""
         if not obj.answers:
             return mark_safe('<span style="color:#9e9e9e">No answers recorded</span>')
         rows = ""
@@ -327,7 +326,6 @@ class QuizSubmissionAdmin(admin.ModelAdmin):
             .select_related("student__user", "quiz__course")
         )
 
-    # ── Actions ───────────────────────────────────────────────────────────────
 
     @admin.action(description="📢 Publish results to students")
     def publish_results(self, request, queryset):
@@ -343,17 +341,14 @@ class QuizSubmissionAdmin(admin.ModelAdmin):
     def recalculate_scores(self, request, queryset):
         updated = 0
         for sub in queryset.prefetch_related("quiz__questions"):
-            sub.score = None   # force recalculation
+            sub.score = None  
             sub.grade()
             sub.save(update_fields=["score"])
             updated += 1
         self.message_user(request, f"Recalculated scores for {updated} submission(s).")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Assignment & AssignmentSubmission (registered only if models exist)
-# ─────────────────────────────────────────────────────────────────────────────
-
+#
 if HAS_ASSIGNMENTS:
 
     @admin.register(Assignment)
@@ -361,15 +356,15 @@ if HAS_ASSIGNMENTS:
         list_display = (
             "title",
             "course_display",
-            "deadline",           # field is called deadline, not due_date
-            "submission_count",   # removed total_marks — no such field on Assignment
+            "deadline",           
+            "submission_count", 
         )
         list_filter = (
             ("course", admin.RelatedOnlyFieldListFilter),
             "course__department",
         )
         search_fields = ("title", "description", "course__title")
-        date_hierarchy = "deadline"           # was due_date
+        date_hierarchy = "deadline"          
         list_select_related = ("course",)
 
         def get_queryset(self, request):

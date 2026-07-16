@@ -67,7 +67,7 @@ const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButtonProps>(
         transition={transition}
         className={baseClasses}
         disabled={disabled}
-        {...(rest as any)} // 👈 cast to any to avoid type conflicts with motion
+        {...(rest as any)}
       >
         {icon && <span className="shrink-0">{icon}</span>}
         <span>{children}</span>
