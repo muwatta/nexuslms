@@ -1,40 +1,54 @@
-
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-
-db.sqlite3
+*.py[cod]
 *.sqlite3
+
+# Django
+db.sqlite3
 media/
 staticfiles/
 
-# Environment Variables
+# Environment
 .env
+.env.*
+!.env.example
 
-# Virtual Environments
+# Virtual environments
+.venv/
 venv/
 env/
-.venv/
 
-# IDEs
+# Python tooling
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# IDE
 .vscode/
 .idea/
 
-# Frontend
-node_modules/
-frontend/dist/
-build/
+# OS
+.DS_Store
+Thumbs.db
 
-# Backups
-db_backup.sqlite3
-backend/backup.json
+# Logs
+*.log
 
+# Temporary files
+*.tmp
+
+# Test output
 backend-test-output.txt
 
-# Docs
-docs/
-
-.AGENTS.md
+/docs
+AGENTS.md
+/AGENTS.md
