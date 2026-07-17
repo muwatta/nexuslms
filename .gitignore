@@ -52,3 +52,7 @@ backend-test-output.txt
 /docs
 AGENTS.md
 /AGENTS.md
+
+/.gitattributes
+
+/.gitignore
