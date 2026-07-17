@@ -97,12 +97,22 @@ const Notifications: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Small delay to prevent immediate connection on mount (helps with React StrictMode)
+    // Poll for token availability before first connect
+    const pollId = setInterval(() => {
+      if (getAccessToken()) {
+        clearInterval(pollId);
+        connectWebSocket();
+      }
+    }, 500);
+
+    // Fallback: try once after 2s in case token arrives quickly
     const timeoutId = setTimeout(() => {
+      clearInterval(pollId);
       connectWebSocket();
-    }, 100);
+    }, 2000);
 
     return () => {
+      clearInterval(pollId);
       clearTimeout(timeoutId);
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         console.log("🧹 Cleaning up WebSocket on unmount");
