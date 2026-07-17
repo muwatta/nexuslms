@@ -558,6 +558,7 @@ export function setUserData(data: UserData): void {
 
 export function clearUserData(): void {
   localStorage.removeItem("user_data");
+  localStorage.removeItem("rolesAndPermissionsCache");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

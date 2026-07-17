@@ -373,7 +373,7 @@ export default function Login() {
             </div>
 
             <div className="ff">
-              Don't have an account? <Link to="/register">Create one</Link>
+              Don't have an account? <Link to="/signup">Create one</Link>
             </div>
           </div>
         </div>

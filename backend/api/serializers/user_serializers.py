@@ -14,6 +14,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'first_name': {'required': True},
             'last_name': {'required': True},
+            'role': {'required': False},
+            'department': {'required': False},
         }
     
     def validate(self, data):
@@ -22,5 +24,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
+        validated_data['role'] = 'student'
         user = User.objects.create_user(**validated_data)
         return user

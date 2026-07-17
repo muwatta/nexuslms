@@ -207,7 +207,6 @@ MEDIA_ROOT   = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-ASGI_APPLICATION = "nexuslms.asgi.application"
 AUTH_USER_MODEL  = "api.User"
 
 
