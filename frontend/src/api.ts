@@ -9,6 +9,16 @@ const api = axios.create({
   timeout: 15000,
 });
 
+let _accessToken: string | null = null;
+
+export function getAccessToken(): string | null {
+  return _accessToken;
+}
+
+export function setAccessToken(token: string | null) {
+  _accessToken = token;
+}
+
 api.interceptors.request.use(
   (config) => config,
   (error) => Promise.reject(error),
@@ -26,7 +36,13 @@ function processQueue(error: unknown) {
 }
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const token = response.data?.access_token;
+    if (token) {
+      _accessToken = token;
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 
@@ -58,6 +74,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
+        _accessToken = null;
         localStorage.removeItem("user_data");
         window.location.href = "/login";
         return Promise.reject(refreshError);

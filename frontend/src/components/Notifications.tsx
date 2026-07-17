@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { getAccessToken } from "../api";
 
 const Notifications: React.FC = () => {
   const [messages, setMessages] = useState<string[]>([]);
@@ -26,9 +27,15 @@ const Notifications: React.FC = () => {
       return;
     }
 
+    const token = getAccessToken();
+    if (!token) {
+      console.log("No access token available, deferring WebSocket connection");
+      return;
+    }
+
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     const host = window.location.host;
-    const url = `${protocol}://${host}/ws/notifications/`;
+    const url = `${protocol}://${host}/ws/notifications/?token=${encodeURIComponent(token)}`;
 
     console.log(
       `Connecting to WebSocket (attempt ${reconnectAttemptRef.current + 1}/${maxReconnectAttempts}):`,

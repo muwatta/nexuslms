@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { setAccessToken } from "../api";
 import {
   handleLoginSuccess,
   getDashboardRouteByRole,
@@ -61,6 +62,9 @@ export default function Login() {
           data.error || data.detail || "Invalid credentials. Please try again.",
         );
         return;
+      }
+      if (data.access_token) {
+        setAccessToken(data.access_token);
       }
       await handleLoginSuccess(data.user);
       const route = getDashboardRouteByRole(

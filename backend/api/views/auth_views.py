@@ -269,7 +269,7 @@ def secure_login(request):
     except Exception:
         pass
 
-    response = Response({"user": user_data, "message": "Login successful"}, status=status.HTTP_200_OK)
+    response = Response({"user": user_data, "message": "Login successful", "access_token": access_token}, status=status.HTTP_200_OK)
     return set_auth_cookies(response, access_token, refresh_token)
 
 
@@ -294,7 +294,7 @@ def secure_refresh(request):
         new_access = str(refresh.access_token)
         new_refresh = str(refresh)
 
-        response_data = {"message": "Token refreshed successfully"}
+        response_data = {"message": "Token refreshed successfully", "access_token": new_access}
 
         if request.data.get("include_user"):
             try:
