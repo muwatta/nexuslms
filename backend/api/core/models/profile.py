@@ -157,6 +157,15 @@ class Profile(models.Model):
         related_name="profile",
     )
 
+    school = models.ForeignKey(
+        "api.School",
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name="profiles",
+        db_index=True,
+        help_text="School this profile belongs to. Null for super_admin.",
+    )
+
     role = models.CharField(
         max_length=20, choices=ROLE_CHOICES, default="student", db_index=True,
     )

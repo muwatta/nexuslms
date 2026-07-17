@@ -85,6 +85,12 @@ ROLE_PERMISSIONS = {
         "subject.manage",
         # Teacher assignment
         "teacher.assign",
+        # Billing
+        "billing.view",
+        "billing.manage",
+        # School management
+        "school.view",
+        "school.manage",
     ],
     "admin": [
         # Admin access
@@ -122,6 +128,11 @@ ROLE_PERMISSIONS = {
         "department.access.programming",
         # Audit
         "audit.view",
+        # Billing
+        "billing.view",
+        "billing.manage",
+        # School
+        "school.view",
     ],
     "school_admin": [
         # Limited admin access (department-specific)

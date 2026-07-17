@@ -3,6 +3,7 @@ from .user               import User
 from .profile            import Profile
 from .course             import Course
 from .school             import School
+from .subscription       import Subscription
 from .assignment         import Assignment
 from .submission         import AssignmentSubmission
 from .enrollment         import Enrollment
@@ -23,6 +24,7 @@ __all__ = [
     "User",
     "Profile",
     "School",
+    "Subscription",
     "Course",
     "Assignment",
     "AssignmentSubmission",

@@ -39,6 +39,10 @@ from api.academics.views.result_views import ResultViewSet, ReportCardViewSet
 from .analytics import student_analytics
 # with:
 from .analytics import student_analytics, course_analytics
+from .tenant_views import (
+    SchoolViewSet, SubscriptionViewSet,
+    SchoolRegistrationView, SubscriptionInitializeView, SubscriptionVerifyView,
+)
 
 # and add "course_analytics" next to "student_analytics" in __all__
 __all__ = [
@@ -73,4 +77,7 @@ __all__ = [
     "StudentEnrollmentViewSet", "StudentChatView", "AnnouncementListView",
     # Results  ← NEW
     "ResultViewSet", "ReportCardViewSet",
+    # Tenant / Billing
+    "SchoolViewSet", "SubscriptionViewSet",
+    "SchoolRegistrationView", "SubscriptionInitializeView", "SubscriptionVerifyView",
 ]

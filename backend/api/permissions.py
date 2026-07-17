@@ -3,6 +3,7 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 ADMIN_ROLES     = frozenset(["admin", "school_admin", "super_admin"])
+SUPERADMIN_ROLES = frozenset(["super_admin"])
 TEACHER_ROLES   = frozenset(["teacher"])
 ALL_STAFF_ROLES = ADMIN_ROLES | TEACHER_ROLES | frozenset(["non_teaching"])
 
@@ -21,6 +22,11 @@ def _get_role(user) -> str:
 class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         return _get_role(request.user) in ADMIN_ROLES
+
+
+class IsSuperAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return _get_role(request.user) in SUPERADMIN_ROLES
 
 
 class IsAdminOrTeacher(BasePermission):

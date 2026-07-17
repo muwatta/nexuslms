@@ -26,6 +26,10 @@ from .views.permissions_view import PermissionsMeView
 from .core.models import Profile
 
 from .views import ResultViewSet, ReportCardViewSet
+from .views.tenant_views import (
+    SchoolViewSet, SubscriptionViewSet,
+    SchoolRegistrationView, SubscriptionInitializeView, SubscriptionVerifyView,
+)
 
 
 router = DefaultRouter()
@@ -55,6 +59,8 @@ router.register("instructor/students",    InstructorStudentManagementViewSet, ba
 router.register("instructor/results",     InstructorResultsViewSet,           basename="instructor-results")
 router.register("parent", ParentDashboardViewSet, basename="parent")
 router.register("subject-assignments",     SubjectAssignmentViewSet,            basename="subject-assignments")
+router.register("schools",                 SchoolViewSet,                       basename="schools")
+router.register("subscriptions",           SubscriptionViewSet,                 basename="subscriptions")
 
 
 
@@ -97,6 +103,11 @@ urlpatterns = [
     path("student/chat/",          StudentChatView.as_view(),        name="student-chat"),
     
     path("student/announcements/", AnnouncementListView.as_view(),   name="student-announcements"),
+
+    # School registration & billing
+    path("school/register/",           SchoolRegistrationView.as_view(),         name="school-register"),
+    path("billing/initialize/",        SubscriptionInitializeView.as_view(),     name="billing-initialize"),
+    path("billing/verify/",            SubscriptionVerifyView.as_view(),         name="billing-verify"),
 ]
 
 urlpatterns += router.urls

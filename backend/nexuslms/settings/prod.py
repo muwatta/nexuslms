@@ -7,7 +7,7 @@ ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv(
         "ALLOWED_HOSTS",
-        "yourdomain.com,www.yourdomain.com",
+        "",
     ).split(",")
     if host.strip()
 ]
@@ -39,7 +39,7 @@ CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
         "CORS_ALLOWED_ORIGINS",
-        "https://yourdomain.com,https://app.yourdomain.com",
+        "",
     ).split(",")
     if origin.strip()
 ]

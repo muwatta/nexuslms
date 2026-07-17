@@ -14,7 +14,8 @@ class RateLimitMiddleware:
         '/api/auth/password-reset-request/':  (3, 3600),   
         '/api/auth/verify-otp/':               (5, 3600),
         '/api/auth/password-reset-confirm/':   (5, 3600),
-        '/api/token/':                        (5,  300),  
+        '/api/token/':                        (5,  300),
+        '/api/register/':                     (3, 3600),
     }
 
     RATE_LIMITS_DEV = {
@@ -24,6 +25,7 @@ class RateLimitMiddleware:
         '/api/auth/verify-otp/':               (50, 3600),
         '/api/auth/password-reset-confirm/':   (50, 3600),
         '/api/token/':                        (100, 300),
+        '/api/register/':                     (20, 3600),
     }
 
     def __init__(self, get_response):

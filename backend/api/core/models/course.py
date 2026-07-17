@@ -9,6 +9,15 @@ class Course(TimeStampedModel):
         ("programming", "Programming"),
     ]
     
+    school = models.ForeignKey(
+        "api.School",
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name="courses",
+        db_index=True,
+        help_text="School this course belongs to. Null for global/system courses.",
+    )
+
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     

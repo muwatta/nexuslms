@@ -13,6 +13,7 @@ import Navbar from "./components/Navbar";
 import AIChat from "./components/AIChat";
 import Notifications from "./components/Notifications";
 import { getDashboardRouteByRole, getUserData } from "./utils/authUtils";
+import { TenantProvider } from "./hooks/useTenant";
 
 const lazy = (fn: () => Promise<{ default: React.ComponentType<any> }>) =>
   React.lazy(fn);
@@ -58,6 +59,7 @@ const Courses = lazy(() => import("./pages/Courses"));
 const Enrollments = lazy(() => import("./pages/Enrollments"));
 const Assignments = lazy(() => import("./pages/Assignments"));
 const Payments = lazy(() => import("./pages/Payments"));
+const Billing = lazy(() => import("./pages/Billing"));
 const Quizzes = lazy(() => import("./pages/Quizzes"));
 const ViewAchievements = lazy(() => import("./pages/ViewAchievements"));
 const ViewProjects = lazy(() => import("./pages/ViewProjects"));
@@ -174,7 +176,9 @@ const NotFound: React.FC = () => (
 function App() {
   return (
     <BrowserRouter>
-      <AppShell />
+      <TenantProvider>
+        <AppShell />
+      </TenantProvider>
     </BrowserRouter>
   );
 }
@@ -212,10 +216,10 @@ const AppShell: React.FC = () => {
             <Routes>
               {/* PUBLIC */}
               <Route path="/" element={<HomeRouter />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/unauthorized" element={<Unauthorized />} />
+              <Route path="/login" element={<Page><Login /></Page>} />
+              <Route path="/signup" element={<Page><Signup /></Page>} />
+              <Route path="/forgot-password" element={<Page><ForgotPassword /></Page>} />
+              <Route path="/unauthorized" element={<Page><Unauthorized /></Page>} />
               <Route path="/about" element={<About />} />
               <Route path="/programs" element={<Programs />} />
               <Route path="/locations" element={<Locations />} />
@@ -462,6 +466,16 @@ const AppShell: React.FC = () => {
                   <ProtectedRoute requiredPermission="payment.view">
                     <Page>
                       <Payments />
+                    </Page>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/billing"
+                element={
+                  <ProtectedRoute requiredPermission="admin.access">
+                    <Page>
+                      <Billing />
                     </Page>
                   </ProtectedRoute>
                 }

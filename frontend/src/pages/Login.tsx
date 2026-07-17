@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   handleLoginSuccess,
   getDashboardRouteByRole,
@@ -26,6 +26,7 @@ function Particle({ index }: { index: number }) {
 }
 
 export default function Login() {
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -67,7 +68,7 @@ export default function Login() {
         data.user?.department,
         data.user?.instructor_type,
       );
-      window.location.href = route || "/";
+      navigate(route || "/", { replace: true });
     } catch {
       setError("Connection failed. Please check your network.");
     } finally {

@@ -82,18 +82,6 @@ const Signup: React.FC = () => {
       icon: BookOpen,
       desc: "Join our faculty",
     },
-    {
-      value: "instructor",
-      label: "Instructor",
-      icon: Sparkles,
-      desc: "Share expertise",
-    },
-    {
-      value: "admin",
-      label: "Admin",
-      icon: Building2,
-      desc: "Manage platform",
-    },
   ];
 
   useEffect(() => {

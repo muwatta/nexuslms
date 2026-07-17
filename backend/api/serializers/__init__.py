@@ -30,6 +30,12 @@ from .achievement import (
     ProjectSerializer,
     MilestoneSerializer,
 )
+from .tenant import (
+    SchoolSerializer,
+    SchoolRegistrationSerializer,
+    SubscriptionSerializer,
+    SubscriptionInitSerializer,
+)
 
 __all__ = [
     # Profile
@@ -59,4 +65,9 @@ __all__ = [
     "AchievementSerializer",
     "ProjectSerializer",
     "MilestoneSerializer",
+    # Tenant / Billing
+    "SchoolSerializer",
+    "SchoolRegistrationSerializer",
+    "SubscriptionSerializer",
+    "SubscriptionInitSerializer",
 ]
