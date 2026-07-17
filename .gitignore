@@ -31,3 +31,7 @@ build/
 # Backups
 db_backup.sqlite3
 backend/backup.json
+
+
+# Docs
+docs/

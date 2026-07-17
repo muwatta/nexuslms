@@ -7,6 +7,12 @@ from django.contrib import admin
 from django.utils.html import format_html
 from api.core.models import Result, ReportCard
 
+for _model in [Result, ReportCard]:
+    try:
+        admin.site.unregister(_model)
+    except admin.sites.NotRegistered:
+        pass
+
 
 @admin.register(Result)
 class ResultAdmin(admin.ModelAdmin):

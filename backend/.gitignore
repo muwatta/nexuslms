@@ -93,7 +93,6 @@ seed_*.py
 setup_demo.py
 create_parents.py
 add_more_content.py
-test_*.py
 
 # Docker (optional – exclude large logs)
 *.pid

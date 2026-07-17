@@ -4,6 +4,11 @@ from django.utils.html import format_html
 from django.utils.timesince import timesince
 from api.core.models import ChatMessage
 
+try:
+    admin.site.unregister(ChatMessage)
+except admin.sites.NotRegistered:
+    pass
+
 
 @admin.register(ChatMessage)
 class ChatMessageAdmin(admin.ModelAdmin):

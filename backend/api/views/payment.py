@@ -25,12 +25,12 @@ class PaymentViewSet(ModelViewSet):
 
         # Students can only see their own FeePayments
         if user_profile.role == "student":
-            return FeePayment.objects.filter(student=user_profile)
+            return FeePayment.objects.filter(student=user_profile).order_by("-due_date", "-id")
         
         if user_profile.role in {"admin", "super_admin"}:
-            return FeePayment.objects.all()
+            return FeePayment.objects.all().order_by("-due_date", "-id")
         if user_profile.role == "school_admin":
-            return FeePayment.objects.filter(student__department=user_profile.department)
+            return FeePayment.objects.filter(student__department=user_profile.department).order_by("-due_date", "-id")
         return FeePayment.objects.none()
 
     def get_permissions(self):

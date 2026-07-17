@@ -95,10 +95,10 @@ class QuizSubmissionViewSet(ModelViewSet):
         user = self.request.user
         role = getattr(user, 'profile', None) and user.profile.role
         if role == 'teacher':
-            return qs.filter(quiz__course__department=user.profile.department)
+            return qs.filter(quiz__course__department=user.profile.department).order_by("-submitted_at", "-id")
         if role in {'admin', 'super_admin'}:
-            return qs
-        return qs.filter(student=user.profile, published=True)
+            return qs.order_by("-submitted_at", "-id")
+        return qs.filter(student=user.profile, published=True).order_by("-submitted_at", "-id")
 
     def perform_create(self, serializer):
         user_profile = self.request.user.profile

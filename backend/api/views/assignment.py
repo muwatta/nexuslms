@@ -44,7 +44,7 @@ class AssignmentViewSet(ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        return accessible_assignments(self.request.user).select_related("course")
+        return accessible_assignments(self.request.user).select_related("course").order_by("-deadline", "-id")
 
     def perform_create(self, serializer):
         course = serializer.validated_data["course"]
@@ -188,19 +188,18 @@ class AssignmentSubmissionViewSet(ModelViewSet):
         user = self.request.user
         role = getattr(getattr(user, "profile", None), "role", "")
         if role in ["teacher", "school_admin"]:
-            return qs.filter(assignment__course__department=user.profile.department)
+            return qs.filter(assignment__course__department=user.profile.department).order_by("-submitted_at", "-id")
         if role in ["admin", "super_admin"]:
-            return qs
+            return qs.order_by("-submitted_at", "-id")
         elif role == "instructor":
             try:
                 user_profile = user.profile
-                # Get assignments from courses taught by this instructor
                 instructor_course_ids = Course.objects.filter(instructor=user_profile).values_list('id', flat=True)
                 assignment_ids = Assignment.objects.filter(course_id__in=instructor_course_ids).values_list('id', flat=True)
-                return qs.filter(assignment_id__in=assignment_ids)
+                return qs.filter(assignment_id__in=assignment_ids).order_by("-submitted_at", "-id")
             except:
                 return qs.none()
-        return qs.filter(student__user=user, status="published")
+        return qs.filter(student__user=user, status="published").order_by("-submitted_at", "-id")
 
     def perform_create(self, serializer):
         profile = getattr(self.request.user, "profile", None)

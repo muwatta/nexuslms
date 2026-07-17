@@ -1,6 +1,13 @@
 from django.contrib import admin
 from api.core.models import Achievement, Project, Milestone
 
+# Unregister first if already registered by a legacy admin.py
+for _model in [Achievement, Project, Milestone]:
+    try:
+        admin.site.unregister(_model)
+    except admin.sites.NotRegistered:
+        pass
+
 
 @admin.register(Achievement)
 class AchievementAdmin(admin.ModelAdmin):
