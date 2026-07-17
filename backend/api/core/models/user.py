@@ -18,6 +18,15 @@ class User(AbstractUser):
         help_text=_("Primary role of the user — determines permissions and UI access."),
     )
 
+    school = models.ForeignKey(
+        "api.School",
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name="users",
+        db_index=True,
+        help_text=_("School this user belongs to. Null for super_admin."),
+    )
+
     groups = models.ManyToManyField(
         Group,
         related_name="custom_users",          
