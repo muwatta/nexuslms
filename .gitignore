@@ -32,6 +32,9 @@ build/
 db_backup.sqlite3
 backend/backup.json
 
+backend-test-output.txt
 
 # Docs
 docs/
+
+.AGENTS.md
