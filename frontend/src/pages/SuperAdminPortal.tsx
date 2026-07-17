@@ -282,14 +282,6 @@ const SuperAdminPortal: React.FC = () => {
 
   const enterDept = async (dept: (typeof DEPTS)[number]) => {
     navigate(dept.route);
-    api
-      .post("/audit-logs/", {
-        action: "update",
-        model_name: "Department",
-        object_id: dept.id,
-        new_values: { accessed: dept.label },
-      })
-      .catch(() => {});
   };
 
   const filtered = allProfiles.filter((p) => {

@@ -33,6 +33,8 @@ NexusLMS is a **tenant-aware SaaS platform** that provides a unified school mana
 - `drf_spectacular` API schema support
 - local SQLite support and production readiness for PostgreSQL
 - **Redis-backed channel layer** for WebSocket notifications (falls back to InMemory in dev)
+- **ASGI/Daphne** — `ASGI_APPLICATION = "nexuslms.asgi.application"` is required in settings
+- **WebSocket auth** — `CookieJWTAuthMiddleware` reads JWT from cookies or `?token=` query param
 
 ### Frontend (`frontend/`)
 
@@ -125,6 +127,10 @@ School (tenant)
 - Fixed registration endpoint allowing role self-assignment (privilege escalation)
 - Added dj-database-url to requirements.txt (was silently failing)
 - Added .env and .env.example for frontend VITE_API_URL
+- **Fixed `ASGI_APPLICATION` missing** — added to `base.py` so Daphne can start
+- **Fixed WebSocket auth** — cookie path changed from `/api/` to `/`; token also passed via query parameter as fallback for Vite dev proxy
+- **Fixed `access_token` in response bodies** — login and refresh endpoints now return the JWT in the response so the frontend can use it for WebSocket connections
+- **Removed dead audit-log POST call** — `SuperAdminPortal` was POSTing to a read-only endpoint, generating 405 errors
 
 ---
 
