@@ -37,13 +37,16 @@ class SubjectAssignmentViewSet(viewsets.ModelViewSet):
         else:
             try:
                 role = user.profile.role
-            except AttributeError:
+            except Exception:
                 return SubjectAssignment.objects.none()
 
             if role in ADMIN_ROLES:
                 # School admins see their own department only
                 if role == "school_admin":
-                    dept = user.profile.department
+                    try:
+                        dept = user.profile.department
+                    except Exception:
+                        return SubjectAssignment.objects.none()
                     qs = SubjectAssignment.objects.filter(
                         teacher__profile__department=dept
                     ).select_related("student", "teacher", "teacher__profile")

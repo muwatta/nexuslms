@@ -93,15 +93,21 @@ class QuizSubmissionViewSet(ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         user = self.request.user
-        role = getattr(user, 'profile', None) and user.profile.role
+        profile = getattr(user, 'profile', None)
+        role = profile.role if profile else None
         if role == 'teacher':
-            return qs.filter(quiz__course__department=user.profile.department).order_by("-submitted_at", "-id")
+            return qs.filter(quiz__course__department=profile.department).order_by("-submitted_at", "-id")
         if role in {'admin', 'super_admin'}:
             return qs.order_by("-submitted_at", "-id")
-        return qs.filter(student=user.profile, published=True).order_by("-submitted_at", "-id")
+        if profile:
+            return qs.filter(student=profile, published=True).order_by("-submitted_at", "-id")
+        return qs.none()
 
     def perform_create(self, serializer):
-        user_profile = self.request.user.profile
+        try:
+            user_profile = self.request.user.profile
+        except Exception:
+            raise ValidationError("User profile not found")
         
         if user_profile.role != 'student':
             raise ValidationError("Only students can submit quizzes")

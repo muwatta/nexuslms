@@ -45,5 +45,9 @@ class QuizSubmissionSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "score", "published", "submitted_at", "created_at"]
 
     def create(self, validated_data):
-        validated_data["student"] = self.context["request"].user.profile
+        try:
+            validated_data["student"] = self.context["request"].user.profile
+        except Exception:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("User profile not found")
         return super().create(validated_data)

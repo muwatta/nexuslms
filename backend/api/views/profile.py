@@ -20,7 +20,7 @@ def _safe_role(user) -> str:
     """Return the user's profile role without raising."""
     try:
         return user.profile.role or ""
-    except AttributeError:
+    except Exception:
         return ""
 
 
@@ -54,22 +54,29 @@ class ProfileViewSet(viewsets.ModelViewSet):
         if role == "super_admin":
             return queryset
         if role == "school_admin":
-            return queryset.filter(department=user.profile.department)
+            try:
+                return queryset.filter(department=user.profile.department)
+            except Exception:
+                return queryset.none()
         if role in ("instructor", "teacher"):
-            # Teachers can see all students in their department
-            # (needed for result entry — they need to see all students in a class)
-            dept = getattr(user.profile, "department", None)
+            try:
+                dept = getattr(user.profile, "department", None)
+            except Exception:
+                dept = None
             if dept:
                 return queryset.filter(department=dept)
             # Fallback: assigned classes only
-            assigned_classes = InstructorAssignment.objects.filter(
-                instructor=user.profile, is_active=True
-            ).values_list("student_class", flat=True)
+            try:
+                assigned_classes = InstructorAssignment.objects.filter(
+                    instructor=user.profile, is_active=True
+                ).values_list("student_class", flat=True)
+            except Exception:
+                assigned_classes = []
             if assigned_classes:
                 return queryset.filter(
                     student_class__in=assigned_classes, role="student"
                 )
-            return queryset.filter(department=user.profile.department) if hasattr(user, "profile") else queryset.none()
+            return queryset.none()
         # admin role (without super_/school_ prefix) — full access
         if role == "admin":
             return queryset
@@ -103,7 +110,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
     # ── GET /profiles/me/ ────────────────────────────────────────────────────
     @action(detail=False, methods=["get"])
     def me(self, request):
-        profile    = request.user.profile
+        try:
+            profile    = request.user.profile
+        except Exception:
+            return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = ProfileSerializer(profile)
         return Response(serializer.data)
 
@@ -115,7 +125,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
         fields in one request. Role/department changes are blocked here —
         those go through AdminUserViewSet.
         """
-        profile    = request.user.profile
+        try:
+            profile    = request.user.profile
+        except Exception:
+            return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = ProfileCreateUpdateSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -174,7 +187,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
         queryset = Profile.objects.none()
         role     = _safe_role(request.user)
         if role == "school_admin":
-            queryset = queryset.filter(department=request.user.profile.department)
+            try:
+                queryset = queryset.filter(department=request.user.profile.department)
+            except Exception:
+                pass
         page = self.paginate_queryset(queryset)
         if page is not None:
             return self.get_paginated_response(ProfileSerializer(page, many=True).data)
@@ -224,11 +240,17 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
         if role in ("admin", "school_admin", "super_admin"):
             return self.queryset
         if role == "instructor":
-            assigned_classes = InstructorAssignment.objects.filter(
-                instructor=user.profile, is_active=True
-            ).values_list("student_class", flat=True)
+            try:
+                assigned_classes = InstructorAssignment.objects.filter(
+                    instructor=user.profile, is_active=True
+                ).values_list("student_class", flat=True)
+            except Exception:
+                return self.queryset.none()
             return self.queryset.filter(student__student_class__in=assigned_classes)
-        return self.queryset.filter(student=user.profile)
+        try:
+            return self.queryset.filter(student=user.profile)
+        except Exception:
+            return self.queryset.none()
 
 
 class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):

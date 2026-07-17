@@ -5,11 +5,17 @@ from api.serializers import EnrollmentSerializer
 
 class IsStudent(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user.profile.role == 'student'
+        try:
+            return request.user.profile.role == 'student'
+        except Exception:
+            return False
 
 class IsInstructor(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user.profile.role == 'instructor'
+        try:
+            return request.user.profile.role == 'instructor'
+        except Exception:
+            return False
 
 class EnrollmentViewSet(viewsets.ModelViewSet):
     serializer_class = EnrollmentSerializer
@@ -20,7 +26,10 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
         return [permissions.IsAuthenticated()]
     
     def get_queryset(self):
-        user_profile = self.request.user.profile
+        try:
+            user_profile = self.request.user.profile
+        except Exception:
+            return Enrollment.objects.none()
         
         # Instructors see enrollments for their courses
         if user_profile.role == 'instructor':
@@ -30,7 +39,10 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
         return Enrollment.objects.filter(student=user_profile)
     
     def perform_create(self, serializer):
-        user_profile = self.request.user.profile
+        try:
+            user_profile = self.request.user.profile
+        except Exception:
+            raise ValidationError("User profile not found")
         
         # Auto-set student to current user
         if user_profile.role != 'student':

@@ -20,9 +20,8 @@ Hosting options (choose one)
 Required infra components
 
 - PostgreSQL (managed: RDS, Azure Database, DigitalOcean Managed DB)
-- Redis (cache + Celery broker; managed Redis or Elasticache)
+- Redis (Channels layer + cache + rate limiting; managed Redis or Elasticache)
 - Object storage for media (S3 or compatible)
-- Optional Celery workers for background tasks
 - Monitoring (Prometheus/Grafana or SaaS: Datadog) and Sentry for errors
 - Backups & retention of DB and media
 - SSL via Let's Encrypt or provider managed certs
@@ -91,6 +90,52 @@ Next steps
 - Decide hosting provider and plan size
 - Add deployment manifests (ECS, K8s, or docker-compose)
 - Implement automated backups and health checks
+
+## SaaS / Multi-Tenant Considerations
+
+NexusLMS is now a multi-tenant SaaS application. Each school is an isolated tenant.
+
+### Tenant isolation
+
+- `School` model is the root entity (slug, plan, feature flags, limits)
+- `User`, `Profile`, and `Course` have `school` foreign keys
+- `TenantMiddleware` resolves `request.school` from the authenticated user
+- Viewsets must apply `queryset = queryset.filter(school=request.school)` for tenant scoping
+
+### Subscription plans
+
+| Plan | Price (₦/month) | Students | Teachers | Courses |
+|------|----------------|----------|----------|---------|
+| Free Trial | 0 (14 days) | 50 | 10 | 20 |
+| Starter | 15,000 | 200 | 30 | 50 |
+| Professional | 35,000 | 1,000 | 100 | 200 |
+| Enterprise | 80,000 | Unlimited | Unlimited | Unlimited |
+
+### Billing integration
+
+- Paystack handles payment collection
+- `/api/billing/initialize/` creates a Paystack transaction
+- `/api/billing/verify/` confirms payment and activates the subscription plan
+- Webhook support (planned) for async payment confirmation
+
+### Tenant provisioning flow
+
+1. School admin visits `/school/register` or `/signup`
+2. `POST /api/school/register/` creates School + admin User + Profile
+3. School starts on `free_trial` plan (14 days, 50 students)
+4. Admin upgrades via `/billing` page → Paystack → verification → plan activated
+
+### Environment variables for SaaS
+
+```bash
+# Paystack
+PAYSTACK_SECRET_KEY=sk_test_...
+PAYSTACK_PUBLIC_KEY=pk_test_...
+
+# Tenant
+DEFAULT_SCHOOL_PLAN=free_trial
+TRIAL_DURATION_DAYS=14
+```
 
 ---
 

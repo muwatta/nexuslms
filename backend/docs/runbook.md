@@ -30,19 +30,26 @@ python backend/manage.py init_groups --sync-users
 python backend/manage.py collectstatic --noinput
 ```
 
-4. Backup database (Postgres example)
+4. Verify Redis connectivity (production)
+
+```bash
+redis-cli -u "$REDIS_URL" ping
+# Expected: PONG
+```
+
+5. Backup database (Postgres example)
 
 ```bash
 pg_dump --dbname="$DATABASE_URL" -Fc -f /backups/nexuslms-$(date +%F).dump
 ```
 
-5. Restore database (example)
+6. Restore database (example)
 
 ```bash
 pg_restore --clean --no-owner --dbname="$DATABASE_URL" /backups/nexuslms-2026-03-01.dump
 ```
 
-6. Rolling deploy (Docker example)
+7. Rolling deploy (Docker example)
 
 - Build image locally and push to registry
 
@@ -53,17 +60,43 @@ docker push registry.example.com/nexuslms/backend:latest
 
 - Update service (ECS/K8s/compose) to use new image and verify health checks.
 
-7. Troubleshooting
+8. Subscription management commands
+
+```bash
+# Check subscription status for all schools
+python backend/manage.py shell -c "
+from api.core.models import School, Subscription
+for s in School.objects.all():
+    sub = Subscription.objects.filter(school=s).order_by('-created_at').first()
+    print(f'{s.name}: plan={s.plan}, sub={sub.status if sub else \"none\"}')"
+
+# Manually expire overdue subscriptions (use with caution)
+python backend/manage.py shell -c "
+from api.core.models import Subscription
+from django.utils import timezone
+Subscription.objects.filter(status='active', expires_at__lt=timezone.now()).update(status='expired')"
+
+# Set a school to enterprise plan (super admin override)
+python backend/manage.py shell -c "
+from api.core.models import School
+s = School.objects.get(slug='my-school')
+s.plan = 'enterprise'
+s.save()
+print(f'Updated {s.name} to enterprise plan')"
+```
+
+9. Troubleshooting
 
 - Check web logs: `docker logs <container>` or cloud provider logs
-- Check Celery: `systemctl status celery` or container logs
+- Check Redis: `redis-cli -u "$REDIS_URL" info server`
+- Check tenant isolation: `python -c "import django; django.setup(); from api.core.models import User; print(User.objects.values('school__name').annotate(c=Count('id')))"` 
 - Database connectivity: `python -c "import django; django.setup(); from django.db import connections; print(connections['default'].introspection.table_names())"`
 
-8. Emergency rollback
+10. Emergency rollback
 
 - Re-deploy previous image tag and re-run migrations if needed.
 
-9. Contact & escalation
+11. Contact & escalation
 
 - Support lead: ops@example.com
 - On-call: +1-555-OPS (Gold SLA only)

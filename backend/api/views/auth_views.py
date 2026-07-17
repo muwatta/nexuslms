@@ -75,7 +75,7 @@ def set_auth_cookies(response, access_token, refresh_token):
     response.set_cookie(
         key="access_token", value=access_token,
         httponly=True, secure=COOKIE_SECURE, samesite=COOKIE_SAMESITE,
-        max_age=int(ACCESS_TOKEN_LIFETIME.total_seconds()), path="/api/",
+        max_age=int(ACCESS_TOKEN_LIFETIME.total_seconds()), path="/",
     )
     response.set_cookie(
         key="refresh_token", value=refresh_token,
@@ -86,7 +86,7 @@ def set_auth_cookies(response, access_token, refresh_token):
 
 
 def clear_auth_cookies(response):
-    response.delete_cookie("access_token",  path="/api/")
+    response.delete_cookie("access_token",  path="/")
     response.delete_cookie("refresh_token", path="/api/auth/refresh/")
     return response
 

@@ -98,6 +98,8 @@ class ResultViewSet(viewsets.ModelViewSet):
     def submit(self, request, pk=None):
         result  = self.get_object()
         profile = getattr(request.user, "profile", None)
+        if not profile:
+            return Response({"detail": "Profile not found."}, status=status.HTTP_403_FORBIDDEN)
 
         if result.entered_by != profile and profile.role not in ("admin", "super_admin"):
             return Response(
@@ -118,6 +120,8 @@ class ResultViewSet(viewsets.ModelViewSet):
     def review(self, request, pk=None):
         result  = self.get_object()
         profile = getattr(request.user, "profile", None)
+        if not profile:
+            return Response({"detail": "Profile not found."}, status=status.HTTP_403_FORBIDDEN)
 
         if profile.role not in ("teacher", "admin", "super_admin", "school_admin"):
             return Response(
@@ -139,6 +143,8 @@ class ResultViewSet(viewsets.ModelViewSet):
     def publish(self, request, pk=None):
         result  = self.get_object()
         profile = getattr(request.user, "profile", None)
+        if not profile:
+            return Response({"detail": "Profile not found."}, status=status.HTTP_403_FORBIDDEN)
 
         if profile.role not in ("admin", "super_admin", "school_admin"):
             return Response(
@@ -241,7 +247,7 @@ class ResultViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["post"])
     def compute_positions(self, request):
         profile = getattr(request.user, "profile", None)
-        if profile.role not in ("admin", "super_admin", "school_admin"):
+        if not profile or profile.role not in ("admin", "super_admin", "school_admin"):
             return Response(
                 {"detail": "Only admins can compute positions."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -329,7 +335,7 @@ class ReportCardViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=["post"])
     def generate(self, request):
         profile = getattr(request.user, "profile", None)
-        if profile.role not in ("admin", "super_admin", "school_admin"):
+        if not profile or profile.role not in ("admin", "super_admin", "school_admin"):
             return Response(
                 {"detail": "Only admins can generate report cards."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -406,7 +412,7 @@ class ReportCardViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"])
     def publish(self, request, pk=None):
         profile = getattr(request.user, "profile", None)
-        if profile.role not in ("admin", "super_admin", "school_admin"):
+        if not profile or profile.role not in ("admin", "super_admin", "school_admin"):
             return Response(
                 {"detail": "Only admins can publish report cards."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -418,7 +424,7 @@ class ReportCardViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=["post"])
     def publish_all(self, request):
         profile = getattr(request.user, "profile", None)
-        if profile.role not in ("admin", "super_admin", "school_admin"):
+        if not profile or profile.role not in ("admin", "super_admin", "school_admin"):
             return Response(
                 {"detail": "Only admins can publish report cards."},
                 status=status.HTTP_403_FORBIDDEN,

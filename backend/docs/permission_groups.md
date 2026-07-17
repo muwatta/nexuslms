@@ -15,7 +15,9 @@ into the appropriate buckets; our signal code also auto‑assigns groups based o
 | **Content Moderators** | Instructors, Teachers           | edit/delete quizzes, assignments, achievements, projects       |
 | **Financial Viewers**  | School‑level Admin, Super‑Admin | view payment records, invoices, enrollments                    |
 | **User Managers**      | School‑level Admin, Super‑Admin | add/change/delete users; assign roles                          |
-| **Parents**            | Parent accounts                 | view their child’s enrollments & progress (own‑child only)     |
+| **Parents**            | Parent accounts                 | view their child's enrollments & progress (own‑child only)     |
+| **Billing Managers**   | Super‑Admin, Admin              | view subscriptions, initialize payments, manage billing plans  |
+| **School Managers**    | Super‑Admin                     | create/edit/delete schools, manage plans, set feature flags    |
 | **Backend Staff**      | IT/support staff                | access tooling/health pages; manage deployments (custom group) |
 
 > **Note:** “Backend Staff” isn’t a built‑in Django concept; it’s a label you

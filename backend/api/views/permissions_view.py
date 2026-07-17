@@ -64,7 +64,7 @@ class PermissionsMeView(APIView):
                 or getattr(profile, "instructor_type", None)
                 or ""
             )
-        except AttributeError:
+        except Exception:
             pass
 
         if user.is_superuser and role != "super_admin":

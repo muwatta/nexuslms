@@ -158,7 +158,7 @@ class SubjectAssignmentSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError(
                         {"teacher": "Assigned user must have the 'teacher' role."}
                     )
-            except AttributeError:
+            except Exception:
                 pass
         return data
 

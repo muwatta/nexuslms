@@ -15,7 +15,7 @@ def _get_role(user) -> str:
         return "super_admin"
     try:
         return user.profile.role or ""
-    except AttributeError:
+    except Exception:
         return ""
 
 
@@ -55,7 +55,7 @@ class IsClassTeacher(BasePermission):
         try:
             p = request.user.profile
             return p.role == "teacher" and p.teacher_type == "class"
-        except AttributeError:
+        except Exception:
             return False
 
 IsClassInstructor = IsClassTeacher  # backwards compat
@@ -71,7 +71,7 @@ class IsSubjectTeacher(BasePermission):
         try:
             p = request.user.profile
             return p.role == "teacher" and p.teacher_type == "subject"
-        except AttributeError:
+        except Exception:
             return False
 
 IsSubjectInstructor = IsSubjectTeacher  # backwards compat
@@ -88,7 +88,7 @@ class IsAdminOrClassTeacher(BasePermission):
             return p.role in ADMIN_ROLES or (
                 p.role == "teacher" and p.teacher_type == "class"
             )
-        except AttributeError:
+        except Exception:
             return False
 
 IsAdminOrClassInstructor = IsAdminOrClassTeacher  # backwards compat
@@ -133,7 +133,7 @@ class IsSameDepartment(BasePermission):
             return True
         try:
             user_dept = request.user.profile.department
-        except AttributeError:
+        except Exception:
             return False
         obj_dept = (
             getattr(obj, "department", None)
@@ -167,7 +167,7 @@ def user_can_manage_department(user, department: str) -> bool:
     if role in ("admin", "school_admin"):
         try:
             return user.profile.department == department
-        except AttributeError:
+        except Exception:
             return False
     return False
 
@@ -178,7 +178,7 @@ def user_can_access_submission(user, submission) -> bool:
     try:
         if submission.student.user == user:
             return True
-    except AttributeError:
+    except Exception:
         pass
     if role == "teacher":
         try:
@@ -187,6 +187,6 @@ def user_can_access_submission(user, submission) -> bool:
                 or submission.quiz.course.department
             )
             return user.profile.department == sub_dept
-        except AttributeError:
+        except Exception:
             return False
     return False

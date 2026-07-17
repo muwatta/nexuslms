@@ -199,7 +199,7 @@ class AdminProfileResponseSerializer(drf_serializers.ModelSerializer):
 def _get_caller_role(request) -> str:
     try:
         return request.user.profile.role or ""
-    except AttributeError:
+    except Exception:
         return ""
 
 
@@ -249,7 +249,7 @@ class AdminUserViewSet(ModelViewSet):
             try:
                 caller_dept = self.request.user.profile.department
                 qs = qs.filter(department=caller_dept)
-            except AttributeError:
+            except Exception:
                 return qs.none()
 
         # ── Query param filters ───────────────────────────────────────────────
@@ -287,7 +287,7 @@ class AdminUserViewSet(ModelViewSet):
         if caller_role == "school_admin":
             try:
                 d["department"] = request.user.profile.department
-            except AttributeError:
+            except Exception:
                 pass
 
         if d.get("role") in ("admin", "super_admin") and caller_role != "super_admin":
@@ -338,7 +338,7 @@ class AdminUserViewSet(ModelViewSet):
                         {"detail": "You can only edit users in your own department."},
                         status=status.HTTP_403_FORBIDDEN,
                     )
-            except AttributeError:
+            except Exception:
                 pass
 
         new_role = request.data.get("role")
@@ -426,7 +426,7 @@ class AdminUserViewSet(ModelViewSet):
                         {"detail": "You can only delete users in your own department."},
                         status=status.HTTP_403_FORBIDDEN,
                     )
-            except AttributeError:
+            except Exception:
                 pass
 
         if profile.role in ("admin", "super_admin") and caller_role != "super_admin":
@@ -493,7 +493,7 @@ class AdminUserViewSet(ModelViewSet):
         if caller_role == "school_admin":
             try:
                 qs = qs.filter(department=request.user.profile.department)
-            except AttributeError:
+            except Exception:
                 return Response({})
 
         return Response({

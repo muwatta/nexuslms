@@ -13,13 +13,20 @@ NexusLMS is a school academic-management and learning platform built for the Nig
 │  (Vite)      │  <──────────── │  (Daphne ASGI)   │  <────────── │  (or SQLite│
 │              │   JSON/cookies  │                  │              │   in dev)  │
 └──────────────┘                └──────────────────┘              └────────────┘
-                                       │
-                                       │ WebSocket
-                                       ▼
-                                ┌──────────────────┐
-                                │  Django Channels  │
-                                │  (notifications)  │
-                                └──────────────────┘
+                                        │
+                                        │ WebSocket (Redis in prod)
+                                        ▼
+                                 ┌──────────────────┐
+                                 │  Django Channels  │
+                                 │  (notifications)  │
+                                 └──────────────────┘
+                                        │
+                                        │ TenantMiddleware
+                                        ▼
+                                 ┌──────────────────┐
+                                 │  School (tenant)  │
+                                 │  isolation layer  │
+                                 └──────────────────┘
 ```
 
 ## Backend
@@ -30,9 +37,10 @@ NexusLMS is a school academic-management and learning platform built for the Nig
 - **Server:** Daphne (ASGI) for HTTP and WebSocket support
 - **Auth:** JWT in HttpOnly cookies + `localStorage` profile signal
 - **Database:** SQLite (dev) / PostgreSQL (production via `DATABASE_URL`)
-- **Realtime:** Django Channels (in-memory channel layer; Redis needed for production)
+- **Realtime:** Django Channels with Redis channel layer (production) or InMemory (dev)
+- **Tenancy:** TenantMiddleware resolves school from user profile
 - **PDFs:** ReportLab (syllabus, assignments, quizzes, results)
-- **Payments:** Paystack API client
+- **Payments:** Paystack API client (transactions + subscriptions)
 - **AI:** Google Gemini API
 
 ### Project Layout
@@ -46,26 +54,27 @@ backend/
 │   └── wsgi.py             # WSGI entry
 ├── api/                    # Main Django application
 │   ├── core/               # Core business logic
-│   │   ├── models/         # All 21 model classes
+│   │   ├── models/         # All 23 model classes
 │   │   ├── services/       # Business services (grading, reports, parent)
-│   │   ├── constants.py    # Domain constants
+│   │   ├── constants.py    # Domain constants (roles, permissions)
 │   │   └── permsissions/   # Permission framework (placeholder)
 │   ├── models/             # Backwards-compat re-exports from core.models
-│   ├── views/              # DRF viewsets and API views
-│   ├── serializers/        # DRF serializers
-│   ├── permissions.py      # DRF permission classes
+│   ├── views/              # DRF viewsets and API views (20+ modules)
+│   ├── serializers/        # DRF serializers (15 modules)
+│   ├── permissions.py      # DRF permission classes (IsAdmin, IsSuperAdmin, etc.)
 │   ├── admin/              # Django admin registrations
 │   ├── academics/          # Results and report cards sub-module
-│   ├── tests/              # Test suite (35 tests)
-│   ├── management/commands/ # 23 management commands
+│   ├── tests/              # Test suite (37 tests)
+│   ├── management/commands/ # 22 management commands
 │   ├── signals.py          # Auto-enroll, auto-assign, group sync
 │   ├── middleware.py        # Rate limiting, security headers
+│   ├── tenant_middleware.py # Tenant isolation (request.school resolution)
 │   ├── authentication.py   # Cookie-based JWT authentication
 │   ├── pagination.py       # Custom pagination classes
 │   ├── filters.py          # DRF filter classes
 │   ├── pdf_utils.py        # PDF generation utilities
-│   ├── paystack_client.py  # Paystack API wrapper
-│   └── urls.py             # API URL routing (21 router + 20 manual)
+│   ├── paystack_client.py  # Paystack API wrapper (transactions + subscriptions)
+│   └── urls.py             # API URL routing (23 router + 23 manual)
 ├── docs/                   # Internal documentation
 ├── Dockerfile              # Production container
 └── requirements.txt        # Python dependencies
@@ -76,13 +85,16 @@ backend/
 Core entities and their relationships:
 
 ```
-User ── 1:1 ── Profile(role, department, class, parent_email, student_id)
-                   ├── Enrollment ── Course (academic_year, term, status)
-                   ├── Result ── Course ── ReportCard
-                   ├── AssignmentSubmission ── Assignment ── Course
-                   ├── QuizSubmission ── Quiz ── Question ── Course
-                   ├── FeePayment (Paystack reference, auto-status)
-                   └── Achievement / Project / Milestone
+School (tenant) ─── slug, plan, trial_ends_at, max_students/teachers/courses
+  ├── User ── 1:1 ── Profile(role, department, class, parent_email, student_id, school FK)
+  │                  ├── Enrollment ── Course(school FK)
+  │                  ├── Result ── Course ── ReportCard
+  │                  ├── AssignmentSubmission ── Assignment ── Course
+  │                  ├── QuizSubmission ── Quiz ── Question ── Course
+  │                  ├── FeePayment (Paystack reference, auto-status)
+  │                  └── Achievement / Project / Milestone
+  ├── Subscription(plan, status, Paystack refs, dates)
+  └── Course(school FK, title, department, class, instructor)
 
 SubjectAssignment (user + teacher + subject)
 InstructorAssignment (profile + course + class)
@@ -95,9 +107,11 @@ Key models:
 
 | Model | Purpose |
 |-------|---------|
-| `User` | Custom Django user with `role` field |
-| `Profile` | One-to-one extension: role, department, class, phone, parent_email |
-| `Course` | Subject/class record with assigned instructor |
+| `School` | Multi-tenant root entity (slug, plan, limits, feature flags) |
+| `Subscription` | Billing history with Paystack references and plan status |
+| `User` | Custom Django user with `role` and `school` FK |
+| `Profile` | One-to-one extension: role, department, class, phone, parent_email, school FK |
+| `Course` | Subject/class record with assigned instructor and school FK |
 | `Enrollment` | Student-course link with academic year, term, status, promotion tracking |
 | `Result` | CA + exam grading with draft→submitted→reviewed→published workflow |
 | `ReportCard` | Aggregated student results with position and average |
@@ -119,8 +133,29 @@ Key models:
 Three layers (only the server-side layer is authoritative):
 
 1. **Django Groups** — synced from Profile.role via signals
-2. **DRF Permission Classes** — `IsAdmin`, `IsTeacher`, `IsAdminOrTeacher`, `IsClassTeacher`, etc.
+2. **DRF Permission Classes** — `IsAdmin`, `IsTeacher`, `IsAdminOrTeacher`, `IsClassTeacher`, `IsSuperAdmin`, etc.
 3. **Frontend Permission Hints** — cached role→permission mapping (UI only, not security)
+
+### Tenant Isolation
+
+`TenantMiddleware` resolves `request.school` from the authenticated user's profile:
+
+1. Middleware checks for a valid JWT cookie
+2. If authenticated, loads `profile.school` (or `school` FK on User)
+3. Sets `request.school` for downstream viewsets
+4. Viewsets can filter querysets by `school FK` for tenant scoping
+
+This is the foundation for multi-tenant isolation. Viewsets should apply `queryset = queryset.filter(school=request.school)` where applicable.
+
+### Subscription Billing
+
+`Subscription` model tracks plan-based limits:
+
+- Plans: `free_trial`, `starter`, `billing`, `professional`, `enterprise`
+- Limits enforced: max_students, max_teachers, max_courses
+- Feature flags: allow_western, allow_arabic, allow_programming
+- Billing endpoints: `/api/billing/initialize/` and `/api/billing/verify/`
+- Paystack integration via `paystack_client.py`
 
 Result workflow enforcement:
 - Subject teacher enters drafts → submits
@@ -162,7 +197,7 @@ frontend/src/
 │   ├── (teacher)        # InstructorDashboard, ClassTeacherDashboard
 │   ├── (student/parent) # StudentDashboard, ParentPortal
 │   └── (feature)        # Courses, Assignments, Quizzes, Payments
-├── hooks/               # useRolesAndPermissions, useTheme
+├── hooks/               # useRolesAndPermissions, useTheme, useTenant
 ├── utils/               # authUtils (role resolution, login/logout)
 ├── data/                # Static marketing content
 └── config/              # Contact information
@@ -224,10 +259,9 @@ docker compose -f docker-compose.prod.yml up  # production (Postgres)
 
 ## Known Limitations
 
-1. **No multi-tenant isolation** — School model exists but is not connected to data
-2. **No Paystack webhook** — Payment verification is client-initiated only
-3. **In-memory Channels** — Notifications don't survive restarts
-4. **Local file storage** — No object storage for production
-5. **No background jobs** — Celery/Redis not configured
-6. **Mixed terminology** — "teacher" and "instructor" used interchangeably
-7. **No frontend tests** — Zero test coverage for the React app
+1. **Partial multi-tenant isolation** — School FK on User/Profile/Course, TenantMiddleware, and subscription billing are implemented; explicit tenant-scoping in viewsets and cross-tenant tests are still needed
+2. **No Paystack webhook** — Payment verification is server-initiated only; webhook for async confirmation is pending
+3. **Local file storage** — No object storage for production
+4. **No background jobs** — Celery/Redis not configured
+5. **Mixed terminology** — "teacher" and "instructor" used interchangeably
+6. **No frontend tests** — Zero test coverage for the React app

@@ -188,7 +188,10 @@ class AssignmentSubmissionViewSet(ModelViewSet):
         user = self.request.user
         role = getattr(getattr(user, "profile", None), "role", "")
         if role in ["teacher", "school_admin"]:
-            return qs.filter(assignment__course__department=user.profile.department).order_by("-submitted_at", "-id")
+            try:
+                return qs.filter(assignment__course__department=user.profile.department).order_by("-submitted_at", "-id")
+            except Exception:
+                return qs.none()
         if role in ["admin", "super_admin"]:
             return qs.order_by("-submitted_at", "-id")
         elif role == "instructor":

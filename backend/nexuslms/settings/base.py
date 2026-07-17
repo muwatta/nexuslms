@@ -77,6 +77,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "nexuslms.wsgi.application"
+ASGI_APPLICATION = "nexuslms.asgi.application"
 
 _redis_url = os.getenv("REDIS_URL", "")
 if _redis_url:

@@ -328,6 +328,31 @@ Filters: `?action=`, `?model_name=`, `?user=`, `?start_date=`, `?end_date=`
 |--------|----------|-------------|------|
 | GET | `/api/class-choices/` | Valid classes for a department (`?department=western`) | Yes |
 
+## Schools (Multi-Tenant)
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/schools/` | List schools (super_admin: all; others: own school) | Yes |
+| POST | `/api/schools/` | Create school | Super Admin |
+| GET | `/api/schools/{id}/` | Retrieve school | Yes |
+| PUT | `/api/schools/{id}/` | Update school | Super Admin |
+| PATCH | `/api/schools/{id}/` | Partial update school | Super Admin |
+| DELETE | `/api/schools/{id}/` | Delete school | Super Admin |
+| POST | `/api/school/register/` | Register new school + admin user | No |
+
+## Subscriptions (Billing)
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/subscriptions/` | List subscriptions (super_admin: all; school: own) | Super Admin |
+| POST | `/api/subscriptions/` | Create subscription | Super Admin |
+| GET | `/api/subscriptions/{id}/` | Retrieve subscription | Super Admin |
+| PUT | `/api/subscriptions/{id}/` | Update subscription | Super Admin |
+| PATCH | `/api/subscriptions/{id}/` | Partial update subscription | Super Admin |
+| DELETE | `/api/subscriptions/{id}/` | Delete subscription | Super Admin |
+| POST | `/api/billing/initialize/` | Initialize Paystack subscription payment | Yes (Admin) |
+| POST | `/api/billing/verify/` | Verify payment and activate plan | Yes (Admin) |
+
 ---
 
-Total: ~174 endpoints across 21 router-registered viewsets + 20 manually registered paths.
+Total: ~190 endpoints across 23 router-registered viewsets + 23 manually registered paths.
