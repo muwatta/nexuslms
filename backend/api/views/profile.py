@@ -137,24 +137,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
     # ── Archive / Restore / Promote ──────────────────────────────────────────
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsAdmin])
     def archive(self, request, pk=None):
-        profile    = self.get_object()
-        serializer = ArchiveRestoreSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        profile.archive(by_user=request.user)
-        return Response({
-            "status":      "archived",
-            "archived_at": profile.archived_at,
-            "message":     "Profile archived successfully",
-        })
+        return Response(
+            {"error": "Archiving is not yet available."},
+            status=status.HTTP_501_NOT_IMPLEMENTED,
+        )
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsAdmin])
     def restore(self, request, pk=None):
-        profile = self.get_object()
-        if not getattr(profile, "is_archived", False):
-            return Response({"error": "Profile is not archived"}, status=status.HTTP_400_BAD_REQUEST)
-        if hasattr(profile, "restore"):
-            profile.restore(by_user=request.user)
-        return Response({"status": "restored", "message": "Profile restored successfully"})
+        return Response(
+            {"error": "Restore is not yet available."},
+            status=status.HTTP_501_NOT_IMPLEMENTED,
+        )
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsAdminOrInstructor])
     def promote(self, request, pk=None):

@@ -11,44 +11,23 @@ const Notifications: React.FC = () => {
   const hasConnectedRef = useRef(false); // Track if we've ever connected
 
   const connectWebSocket = useCallback(() => {
-    // Prevent multiple connections
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log("WebSocket already open");
-      return;
-    }
-    if (wsRef.current?.readyState === WebSocket.CONNECTING) {
-      console.log("WebSocket already connecting");
-      return;
-    }
-
-    // Stop trying after max attempts
-    if (reconnectAttemptRef.current >= maxReconnectAttempts) {
-      console.log("Max reconnection attempts reached, giving up");
-      return;
-    }
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (wsRef.current?.readyState === WebSocket.CONNECTING) return;
+    if (reconnectAttemptRef.current >= maxReconnectAttempts) return;
 
     const token = getAccessToken();
-    if (!token) {
-      console.log("No access token available, deferring WebSocket connection");
-      return;
-    }
+    if (!token) return;
 
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     const host = window.location.host;
     const url = `${protocol}://${host}/ws/notifications/?token=${encodeURIComponent(token)}`;
 
-    console.log(
-      `Connecting to WebSocket (attempt ${reconnectAttemptRef.current + 1}/${maxReconnectAttempts}):`,
-      url,
-    );
-
     const ws = new WebSocket(url);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log("✅ Notification socket connected");
       setIsConnected(true);
-      reconnectAttemptRef.current = 0; // Reset on success
+      reconnectAttemptRef.current = 0;
       hasConnectedRef.current = true;
     };
 
@@ -58,25 +37,17 @@ const Notifications: React.FC = () => {
         if (data.message || data.type === "notification") {
           setMessages((m) => [data.message || data, ...m].slice(0, 5));
         }
-      } catch (e) {
-        console.error("Bad notification format:", e);
+      } catch {
+        // ignore malformed messages
       }
     };
 
-    ws.onerror = (e) => {
-      console.error("❌ WebSocket error:", e);
-      // Don't set connected false here, let onclose handle it
-    };
+    ws.onerror = () => {};
 
     ws.onclose = (e) => {
-      console.log("🔌 WebSocket closed:", e.code, e.reason);
       setIsConnected(false);
       wsRef.current = null;
 
-      // Only reconnect if:
-      // 1. Not intentionally closed (code 1000 or 1001)
-      // 2. Under max attempts
-      // 3. We've never connected OR it was an abnormal close
       const shouldReconnect =
         e.code !== 1000 &&
         e.code !== 1001 &&
@@ -84,14 +55,7 @@ const Notifications: React.FC = () => {
 
       if (shouldReconnect) {
         reconnectAttemptRef.current += 1;
-        console.log(
-          `⏳ Reconnecting in ${reconnectDelay}ms... (attempt ${reconnectAttemptRef.current}/${maxReconnectAttempts})`,
-        );
         setTimeout(connectWebSocket, reconnectDelay);
-      } else {
-        console.log(
-          "🛑 Not reconnecting - max attempts reached or intentional close",
-        );
       }
     };
   }, []);
@@ -115,7 +79,6 @@ const Notifications: React.FC = () => {
       clearInterval(pollId);
       clearTimeout(timeoutId);
       if (wsRef.current?.readyState === WebSocket.OPEN) {
-        console.log("🧹 Cleaning up WebSocket on unmount");
         wsRef.current.close(1000, "Component unmounted");
       }
       wsRef.current = null;

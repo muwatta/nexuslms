@@ -63,6 +63,7 @@ const PaymentSection: React.FC<Props> = ({ profile }) => {
 
   const [showNew, setShowNew] = useState(false);
   const [newAmount, setNewAmount] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const createPayment = async () => {
     try {
@@ -75,7 +76,7 @@ const PaymentSection: React.FC<Props> = ({ profile }) => {
       load();
     } catch (e) {
       console.error(e);
-      alert("could not create");
+      setError("Failed to create payment. Please try again.");
     }
   };
 
@@ -83,6 +84,17 @@ const PaymentSection: React.FC<Props> = ({ profile }) => {
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
       {(profile.role === "student" || profile.role === "parent") && (
         <div className="mb-2">
+          {error && (
+            <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg mb-2">
+              <span>{error}</span>
+              <button
+                onClick={() => setError(null)}
+                className="ml-auto text-red-400 hover:text-red-600"
+              >
+                ×
+              </button>
+            </div>
+          )}
           {showNew ? (
             <div className="flex gap-2">
               <input

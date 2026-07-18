@@ -1,0 +1,62 @@
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info
+*.egg
+dist
+build
+.eggs
+
+# Virtual environments
+venv
+.venv
+env
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Database files
+*.sqlite3
+*.sqlite3-journal
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Tests
+tests
+pytest.ini
+.coverage
+htmlcov
+.tox
+
+# Documentation
+*.md
+LICENSE
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Media uploads (will be mounted as volume in production)
+media
+
+# Static files (collected at runtime)
+staticfiles

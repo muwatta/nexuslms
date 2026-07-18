@@ -21,6 +21,7 @@ const AIHelp: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -48,13 +49,13 @@ const AIHelp: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Validate file size (max 5MB) and type
+    setValidationError(null);
     if (file.size > 5 * 1024 * 1024) {
-      alert("Image size must be under 5MB");
+      setValidationError("Image size must be under 5MB");
       return;
     }
     if (!file.type.startsWith("image/")) {
-      alert("Please upload a valid image file");
+      setValidationError("Please upload a valid image file");
       return;
     }
     setImageFile(file);
@@ -238,6 +239,18 @@ const AIHelp: React.FC = () => {
                   className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
                 >
                   <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            {validationError && (
+              <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
+                <span>{validationError}</span>
+                <button
+                  type="button"
+                  onClick={() => setValidationError(null)}
+                  className="ml-auto text-red-400 hover:text-red-600"
+                >
+                  <X className="w-3 h-3" />
                 </button>
               </div>
             )}

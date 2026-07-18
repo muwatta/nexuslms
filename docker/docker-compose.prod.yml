@@ -7,16 +7,32 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=nexuslms.settings.prod
       - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
       - SECRET_KEY=${SECRET_KEY}
     ports:
       - "8000:8000"
     depends_on:
       - db
+      - redis
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
 
   db:
     image: postgres:15
     restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: lms_db
+      POSTGRES_DB: ${POSTGRES_DB:-lms_db}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+
+volumes:
+  postgres_data:
+  media_data:
+  static_data:

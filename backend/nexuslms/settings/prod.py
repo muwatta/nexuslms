@@ -2,6 +2,16 @@ from .base import *
 
 DEBUG = False
 
+# Cache backend — use Redis when available, fall back to locmem
+_redis_url = os.getenv("REDIS_URL", "")
+if _redis_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": _redis_url,
+        }
+    }
+
 # CRITICAL: Use your production domain(s) here or via environment.
 ALLOWED_HOSTS = [
     host.strip()

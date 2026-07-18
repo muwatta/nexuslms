@@ -126,8 +126,8 @@ class StudentDashboardView(APIView):
         # Unread messages
         unread = 0
         try:
-            from api.core.models import Message
-            unread = Message.objects.filter(
+            from api.core.models import ChatMessage
+            unread = ChatChatMessage.objects.filter(
                 recipient=request.user, is_read=False
             ).count()
         except Exception:
@@ -358,13 +358,13 @@ class StudentChatView(APIView):
     def get(self, request):
         with_id = request.query_params.get("with")
         try:
-            from api.core.models import Message
+            from api.core.models import ChatMessage
         except ImportError:
             return Response([])
 
         if with_id:
             # Return message thread with specific user
-            messages = Message.objects.filter(
+            messages = ChatChatMessage.objects.filter(
                 Q(sender=request.user, recipient_id=with_id) |
                 Q(sender_id=with_id, recipient=request.user)
             ).order_by("timestamp")[:100]
@@ -391,7 +391,7 @@ class StudentChatView(APIView):
 
         # Thread list — find all users this student has messaged or been messaged by
         user_ids = set(
-            Message.objects.filter(
+            ChatMessage.objects.filter(
                 Q(sender=request.user) | Q(recipient=request.user)
             ).exclude(
                 sender=request.user, recipient=request.user
@@ -402,7 +402,7 @@ class StudentChatView(APIView):
         )
         # Flatten and deduplicate, removing self
         other_ids = set()
-        for s, r in Message.objects.filter(
+        for s, r in ChatMessage.objects.filter(
             Q(sender=request.user) | Q(recipient=request.user)
         ).values_list("sender_id", "recipient_id"):
             if s != request.user.id:
@@ -414,11 +414,11 @@ class StudentChatView(APIView):
         for uid in other_ids:
             try:
                 other = User.objects.get(pk=uid)
-                last_msg = Message.objects.filter(
+                last_msg = ChatMessage.objects.filter(
                     Q(sender=request.user, recipient=other) |
                     Q(sender=other, recipient=request.user)
                 ).order_by("-timestamp").first()
-                unread = Message.objects.filter(
+                unread = ChatMessage.objects.filter(
                     sender=other, recipient=request.user, is_read=False
                 ).count()
                 threads.append({
@@ -437,7 +437,7 @@ class StudentChatView(APIView):
 
     def post(self, request):
         try:
-            from api.core.models import Message
+            from api.core.models import ChatMessage
         except ImportError:
             return Response({"detail": "Messaging not available."}, status=501)
 
@@ -455,7 +455,7 @@ class StudentChatView(APIView):
         except User.DoesNotExist:
             return Response({"detail": "Recipient not found."}, status=404)
 
-        msg = Message.objects.create(
+        msg = ChatChatMessage.objects.create(
             sender=request.user,
             recipient=recipient,
             message=message_text,

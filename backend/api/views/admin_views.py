@@ -113,7 +113,6 @@ class AdminUpdateUserSerializer(drf_serializers.Serializer):
     phone           = drf_serializers.CharField(required=False, allow_blank=True, max_length=30)
     address         = drf_serializers.CharField(required=False, allow_blank=True)
     parent_email    = drf_serializers.EmailField(required=False, allow_blank=True)
-    is_archived     = drf_serializers.BooleanField(required=False)
 
     def validate(self, data):
         role            = data.get("role")
@@ -156,8 +155,6 @@ class AdminProfileResponseSerializer(drf_serializers.ModelSerializer):
     user            = drf_serializers.SerializerMethodField()
     teacher_type    = drf_serializers.SerializerMethodField()
     instructor_type = drf_serializers.SerializerMethodField()  # compat alias
-    is_archived     = drf_serializers.SerializerMethodField()
-    archived_at     = drf_serializers.SerializerMethodField()
 
     class Meta:
         model  = Profile
@@ -165,7 +162,7 @@ class AdminProfileResponseSerializer(drf_serializers.ModelSerializer):
             "id", "user", "role", "department", "student_class",
             "teacher_type", "instructor_type",
             "bio", "phone", "address", "parent_email",
-            "student_id", "is_archived", "archived_at", "created_at", "updated_at",
+            "student_id", "created_at", "updated_at",
         ]
 
     def get_user(self, obj):
@@ -186,13 +183,6 @@ class AdminProfileResponseSerializer(drf_serializers.ModelSerializer):
 
     def get_instructor_type(self, obj):
         return self.get_teacher_type(obj)  # compat alias
-
-    def get_is_archived(self, obj):
-        return getattr(obj, "is_archived", False) or False
-
-    def get_archived_at(self, obj):
-        val = getattr(obj, "archived_at", None)
-        return val.isoformat() if val else None
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -460,35 +450,24 @@ class AdminUserViewSet(ModelViewSet):
     # ── ARCHIVE ───────────────────────────────────────────────────────────────
     @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):
-        profile = self.get_object()
-        if profile.user == request.user:
-            return Response({"detail": "You cannot archive your own account."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        if getattr(profile, "is_archived", False):
-            return Response({"detail": "Profile is already archived."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        if hasattr(profile, "archive"):
-            profile.archive(by_user=request.user)
-        _log(request, "archive", profile)
-        return Response({"detail": "User archived.", "id": profile.id})
+        return Response(
+            {"detail": "Archiving is not yet available."},
+            status=status.HTTP_501_NOT_IMPLEMENTED,
+        )
 
     # ── RESTORE ───────────────────────────────────────────────────────────────
     @action(detail=True, methods=["post"])
     def restore(self, request, pk=None):
-        profile = self.get_object()
-        if not getattr(profile, "is_archived", False):
-            return Response({"detail": "Profile is not archived."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        if hasattr(profile, "restore"):
-            profile.restore(by_user=request.user)
-        _log(request, "restore", profile)
-        return Response({"detail": "User restored.", "id": profile.id})
+        return Response(
+            {"detail": "Restore is not yet available."},
+            status=status.HTTP_501_NOT_IMPLEMENTED,
+        )
 
     # ── STATS ─────────────────────────────────────────────────────────────────
     @action(detail=False, methods=["get"])
     def stats(self, request):
         caller_role = _get_caller_role(request)
-        qs = Profile.objects.all()  # is_archived not on model yet
+        qs = Profile.objects.all()
 
         if caller_role == "school_admin":
             try:
