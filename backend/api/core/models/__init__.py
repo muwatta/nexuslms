@@ -18,7 +18,8 @@ from .subjectassignment  import SubjectAssignment
 from .password_reset     import PasswordResetOTP
 from .core               import PracticeQuestion
 from .chat               import ChatMessage
-from .result             import Result, ReportCard   # ← NEW
+from .result             import Result, ReportCard
+from .notification       import Notification
 
 __all__ = [
     "User",
@@ -44,5 +45,6 @@ __all__ = [
     "PracticeQuestion",
     "ChatMessage",
     "Result",        
-    "ReportCard",    
+    "ReportCard",
+    "Notification",
 ]

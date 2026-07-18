@@ -26,6 +26,8 @@ from .views.permissions_view import PermissionsMeView
 from .core.models import Profile
 
 from .views import ResultViewSet, ReportCardViewSet
+from .views.notification_views import NotificationViewSet
+from .views.webhook_views import paystack_webhook
 from .views.tenant_views import (
     SchoolViewSet, SubscriptionViewSet,
     SchoolRegistrationView, SubscriptionInitializeView, SubscriptionVerifyView,
@@ -61,6 +63,7 @@ router.register("parent", ParentDashboardViewSet, basename="parent")
 router.register("subject-assignments",     SubjectAssignmentViewSet,            basename="subject-assignments")
 router.register("schools",                 SchoolViewSet,                       basename="schools")
 router.register("subscriptions",           SubscriptionViewSet,                 basename="subscriptions")
+router.register("notifications",           NotificationViewSet,                 basename="notifications")
 
 
 
@@ -108,6 +111,9 @@ urlpatterns = [
     path("school/register/",           SchoolRegistrationView.as_view(),         name="school-register"),
     path("billing/initialize/",        SubscriptionInitializeView.as_view(),     name="billing-initialize"),
     path("billing/verify/",            SubscriptionVerifyView.as_view(),         name="billing-verify"),
+
+    # Paystack webhook
+    path("webhooks/paystack/",         paystack_webhook,                         name="paystack-webhook"),
 ]
 
 urlpatterns += router.urls

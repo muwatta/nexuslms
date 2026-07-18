@@ -2,6 +2,23 @@ from .base import *
 
 DEBUG = False
 
+# Sentry error tracking
+_sentry_dsn = os.getenv("SENTRY_DSN", "")
+if _sentry_dsn:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            integrations=[DjangoIntegration()],
+            send_default_pii=False,
+            traces_sample_rate=0.1,
+            environment="production",
+        )
+    except ImportError:
+        pass
+
 # Cache backend — use Redis when available, fall back to locmem
 _redis_url = os.getenv("REDIS_URL", "")
 if _redis_url:

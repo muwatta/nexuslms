@@ -9,14 +9,17 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
     "axios": "^1.16.0",
     "clsx": "^2.1.1",
     "framer-motion": "^10.12.16",
     "lucide-react": "^0.577.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
+    "react-hook-form": "^7.82.0",
     "react-router-dom": "^6.0.0",
-    "recharts": "^3.7.0"
+    "recharts": "^3.7.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/react": "^18.0.0",
