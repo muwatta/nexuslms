@@ -368,48 +368,50 @@ const SuperAdminPortal: React.FC = () => {
     `filterPill${id.charAt(0).toUpperCase() + id.slice(1)}` as keyof typeof styles;
 
   return (
-    <div className={styles.header}>
-      <div className={styles.headerBgPattern} />
-      <div className={styles.headerGlow1} />
-      <div className={styles.headerGlow2} />
-      <div className={styles.headerContent}>
-        <div className="flex items-center gap-4">
-          <div className={styles.logoBadge}>SA</div>
-          <div>
-            <h1 className={styles.title}>Super Admin Portal</h1>
-            <p className={styles.subtitle}>
-              Full system access ·{" "}
-              {userData.firstName
-                ? `${userData.firstName} ${userData.lastName ?? ""}`.trim()
-                : userData.username}
-            </p>
-            {lastUpdated && (
-              <p className={styles.updated}>
-                {refreshing ? <span className={styles.spinner} /> : null}
-                Updated {lastUpdated.toLocaleTimeString()}
-                {" · "}
-                <span className={styles.userCount}>
-                  {allProfiles.length} users loaded
-                </span>
+    <>
+      <div className={styles.header}>
+        <div className={styles.headerBgPattern} />
+        <div className={styles.headerGlow1} />
+        <div className={styles.headerGlow2} />
+        <div className={styles.headerContent}>
+          <div className="flex items-center gap-4">
+            <div className={styles.logoBadge}>SA</div>
+            <div>
+              <h1 className={styles.title}>Super Admin Portal</h1>
+              <p className={styles.subtitle}>
+                Full system access ·{" "}
+                {userData.firstName
+                  ? `${userData.firstName} ${userData.lastName ?? ""}`.trim()
+                  : userData.username}
               </p>
-            )}
+              {lastUpdated && (
+                <p className={styles.updated}>
+                  {refreshing ? <span className={styles.spinner} /> : null}
+                  Updated {lastUpdated.toLocaleTimeString()}
+                  {" · "}
+                  <span className={styles.userCount}>
+                    {allProfiles.length} users loaded
+                  </span>
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className={styles.headerBadge}>🔑 Super Admin</span>
-          <button
-            onClick={() => navigate("/admin-dashboard")}
-            className={styles.headerBtn}
-          >
-            ⚙️ Admin Dashboard
-          </button>
-          <button
-            onClick={() => fetchData(true)}
-            disabled={refreshing}
-            className={styles.headerRefresh}
-          >
-            {refreshing ? "⏳" : "🔄"}
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={styles.headerBadge}>🔑 Super Admin</span>
+            <button
+              onClick={() => navigate("/admin-dashboard")}
+              className={styles.headerBtn}
+            >
+              ⚙️ Admin Dashboard
+            </button>
+            <button
+              onClick={() => fetchData(true)}
+              disabled={refreshing}
+              className={styles.headerRefresh}
+            >
+              {refreshing ? "⏳" : "🔄"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -964,7 +966,7 @@ const SuperAdminPortal: React.FC = () => {
           </motion.div>
         </AnimatePresence>
       </div>
-    </div>
+    </>
   );
 };
 
